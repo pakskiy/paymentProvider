@@ -17,6 +17,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -37,8 +38,8 @@ public class PaymentService {
     private final NotificationService notificationService;
     private final DatabaseClient client;
     private final ObjectMapper objectMapper;
+    private final TransactionalOperator transactionalOperator;
 
-    @Transactional
     @SneakyThrows
     public Mono<PaymentResponseDto> create(PaymentRequestDto paymentTransactionDto, String token) {
         MerchantEntity merchantEntity = merchantService.checkByToken(token).toFuture().join();
@@ -62,6 +63,8 @@ public class PaymentService {
 
                 String customerData = objectMapper.writeValueAsString(paymentTransactionDto.getCustomer());
                 String cardData = objectMapper.writeValueAsString(paymentTransactionDto.getCardData());
+
+                transactionalOperator.execute()
 
                 return Mono.fromSupplier(() -> paymentRepository.save(TransactionEntity.builder()
                                 .merchantId(merchantId)
