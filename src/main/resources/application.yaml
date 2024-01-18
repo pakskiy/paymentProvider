@@ -1,0 +1,26 @@
+server:
+  port: 8045
+spring:
+  main:
+    web-application-type: reactive
+  r2dbc:
+    url: "r2dbc:postgresql://localhost:55432/paymentdb"
+    username: "postgres"
+    password: "123456"
+    pool:
+      max-create-connection-time: 2s
+      initial-size: 5
+      max-size: 10
+  flyway:
+    url: jdbc:postgresql://localhost:55432/paymentdb
+    locations: classpath:db/migration
+    user: ${spring.r2dbc.username}
+    password: ${spring.r2dbc.password}
+logging:
+  level:
+    liquibase: INFO
+    root: INFO
+    org:
+      springframework:
+        data:
+          r2dbc=DEBUG:
