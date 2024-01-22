@@ -13,7 +13,6 @@ import com.pakskiy.paymentProvider.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +22,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
@@ -40,89 +39,124 @@ public class PaymentService {
     private final ObjectMapper objectMapper;
     private final TransactionalOperator transactionalOperator;
 
-    @SneakyThrows
-    public Mono<PaymentResponseDto> create(PaymentRequestDto paymentTransactionDto, String token) {
-        MerchantEntity merchantEntity = merchantService.checkByToken(token).toFuture().join();
+    public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
+        try {
+            Optional<MerchantEntity> merchantEntityOptional = merchantService.getByToken(token);
 
-        if (merchantEntity != null) {
-            check(paymentTransactionDto);
-            Long merchantId = merchantEntity.getId();
-            Optional<AccountEntity> accountEntityOptional = accountService.getByMerchantId(merchantId);
-
-            if (accountEntityOptional.isPresent()) {
-                long newDeposit = accountEntityOptional.get().getDepositAmount() + paymentTransactionDto.getAmount();
-
-                AtomicReference<Long> transactionId = new AtomicReference<>(0L);
-                AccountEntity accountEntity = AccountEntity.builder()
-                        .merchantId(merchantId).depositAmount(newDeposit)
-                        .limitAmount(accountEntityOptional.get().getLimitAmount())
-                        .isOverdraft(accountEntityOptional.get().getIsOverdraft())
-                        .createdAt(accountEntityOptional.get().getCreatedAt())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                String customerData = objectMapper.writeValueAsString(paymentTransactionDto.getCustomer());
-                String cardData = objectMapper.writeValueAsString(paymentTransactionDto.getCardData());
-
-                transactionalOperator.execute()
-
-                return Mono.fromSupplier(() -> paymentRepository.save(TransactionEntity.builder()
-                                .merchantId(merchantId)
-                                .providerTransactionId(paymentTransactionDto.getProviderTransactionId())
-                                .method(paymentTransactionDto.getPaymentMethod())
-                                .amount(paymentTransactionDto.getAmount())
-                                .currencyId(paymentTransactionDto.getCurrency().toUpperCase())
-                                .createdAt(paymentTransactionDto.getCreatedAt())
-                                .updatedAt(paymentTransactionDto.getUpdatedAt())
-                                .cardData(cardData)//here need parse card data
-                                .languageId(paymentTransactionDto.getLanguage().toUpperCase())
-                                .notificationUrl(paymentTransactionDto.getNotificationUrl())
-                                .customerData(customerData)//here need parse card data
-                                .status("COMPLETED")
-                                .build())
-                        .doOnSuccess(el -> transactionId.set(el.getId()))
-                        .then(update(accountEntity))
-                        .then(notificationService.send())
-                        .then(Mono.just(PaymentResponseDto.builder().transactionId(transactionId.get()).status(PaymentResponseDto.Statuses.APPROVED).message("OK").build()))
-                        .onErrorResume(ex -> {
-                            if (ex instanceof DataAccessException) {
-                                log.warn("ERR_SAVE_ACCESS {}", ex.getMessage(), ex);
-                                return Mono.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_COMMON").build());
-                            } else {
-                                log.warn("ERR_SAVE_COMMON {}", ex.getMessage(), ex);
-                                return Mono.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
-                            }
-                        }).toFuture().join());
+            if (merchantEntityOptional.isEmpty()) {
+                return Mono.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
             }
+
+            Long merchantId = merchantEntityOptional.get().getId();
+
+            Long transactionId = save(merchantId, request);
+
+            if (transactionId > 0) {
+                return Mono.just(PaymentResponseDto.builder().transactionId(transactionId).status(PaymentResponseDto.Statuses.APPROVED).message("OK").build());
+            }
+        } catch (Exception e) {
+            log.error("ERR_CREATE {}", e.getMessage(), e);
         }
         return Mono.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
     }
 
     private void check(PaymentRequestDto paymentTransactionDto) {
-        checkCountry(paymentTransactionDto.getCustomer().getCountry());
-        checkCurrency(paymentTransactionDto.getCurrency());
-        checkLanguage(paymentTransactionDto.getLanguage());
+        checkCountry(paymentTransactionDto.getCustomer().getCountry().toUpperCase());
+        checkCurrency(paymentTransactionDto.getCurrency().toUpperCase());
+        checkLanguage(paymentTransactionDto.getLanguage().toUpperCase());
     }
 
     private void checkCountry(String id) {
-        if (countryRepository.findById(id.toUpperCase()).toFuture().join() == null) {
-            throw new RuntimeException("Resource not found");
+        if (!countryRepository.existsById(id).toFuture().join()) {
+            throw new RuntimeException("Resource country not found");
         }
     }
 
     private void checkCurrency(String id) {
-        if (currencyRepository.findById(id.toUpperCase()).toFuture().join() == null) {
-            throw new RuntimeException("Resource not found");
+        if (!currencyRepository.existsById(id).toFuture().join()) {
+            throw new RuntimeException("Resource currency not found");
         }
+
     }
 
     private void checkLanguage(String id) {
-        if (languageRepository.findById(id.toUpperCase()).toFuture().join() == null) {
-            throw new RuntimeException("Resource not found");
+        if (!languageRepository.existsById(id).toFuture().join()) {
+            throw new RuntimeException("Resource language not found");
         }
     }
 
-    private Mono<Integer> update(AccountEntity accountEntity) {
+    @SneakyThrows
+    private Long save(Long merchantId, PaymentRequestDto request) {
+        check(request);
+
+        Optional<AccountEntity> accountEntityOptional = accountService.getByMerchantId(merchantId);
+
+        if (accountEntityOptional.isEmpty()) {
+            throw new RuntimeException();
+        }
+
+        long newDeposit = accountEntityOptional.get().getDepositAmount() + request.getAmount();
+        AtomicLong transactionId = new AtomicLong(0L);
+
+        AccountEntity accountEntity = AccountEntity.builder()
+                .merchantId(merchantId).depositAmount(newDeposit)
+                .limitAmount(accountEntityOptional.get().getLimitAmount())
+                .isOverdraft(accountEntityOptional.get().getIsOverdraft())
+                .createdAt(accountEntityOptional.get().getCreatedAt())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        String customerData = objectMapper.writeValueAsString(request.getCustomer());
+        String cardData = objectMapper.writeValueAsString(request.getCardData());
+
+        transactionalOperator.transactional(Mono.defer(() ->
+                saveTransaction(TransactionEntity.builder()
+                        .merchantId(merchantId)
+                        .providerTransactionId(request.getProviderTransactionId())
+                        .method(request.getPaymentMethod())
+                        .amount(request.getAmount())
+                        .currencyId(request.getCurrency().toUpperCase())
+                        .createdAt(request.getCreatedAt())
+                        .updatedAt(request.getUpdatedAt())
+                        .cardData(cardData)//here need parse card data
+                        .languageId(request.getLanguage().toUpperCase())
+                        .notificationUrl(request.getNotificationUrl())
+                        .customerData(customerData)//here need parse card data
+                        .status("COMPLETED")
+                        .build()).map(el-> {
+                    transactionId.set(el.getId());
+                    System.out.println("transactionId: " + transactionId);
+                    return el.getId();
+                }).flatMap(saveId -> saveAccount(accountEntity)))).toFuture().join();
+
+//        TransactionEntity transactionEntity = saveTransaction(TransactionEntity.builder()
+//                .merchantId(merchantId)
+//                .providerTransactionId(request.getProviderTransactionId())
+//                .method(request.getPaymentMethod())
+//                .amount(request.getAmount())
+//                .currencyId(request.getCurrency().toUpperCase())
+//                .createdAt(request.getCreatedAt())
+//                .updatedAt(request.getUpdatedAt())
+//                .cardData(cardData)//here need parse card data
+//                .languageId(request.getLanguage().toUpperCase())
+//                .notificationUrl(request.getNotificationUrl())
+//                .customerData(customerData)//here need parse card data
+//                .status("COMPLETED")
+//                .build()).toFuture().join();
+
+//        int updCnt = saveAccount(accountEntity).toFuture().join();
+//
+//        if (updCnt == 0) {
+//            throw new RuntimeException();
+//        }
+        return transactionId.get();
+    }
+
+    private Mono<TransactionEntity> saveTransaction(TransactionEntity transactionEntity) {
+        return paymentRepository.save(transactionEntity);
+    }
+
+    private Mono<Integer> saveAccount(AccountEntity accountEntity) {
         return client.sql(
                         "update accounts set " +
                                 "deposit_amount = :deposit_amount ," +
@@ -137,15 +171,16 @@ public class PaymentService {
                     if (rowUpdated == 0) {
                         return Mono.error(new IllegalStateException("no update on id=" + accountEntity.getMerchantId()));
                     } else {
-                        return Mono.error(new IllegalStateException("no update on id=" + accountEntity.getMerchantId()));
+                        return Mono.empty();
+//                        return Mono.error(new IllegalStateException("no update on id=" + accountEntity.getMerchantId()));
                     }
                 });
     }
 
-//    public Flux<PaymentResponseDto> report(){
-//
+    public Flux<PaymentResponseDto> report() {
+
 //        paymentRepository.findAllById
-//
-//        return Flux.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
-//    }
+
+        return Flux.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
+    }
 }

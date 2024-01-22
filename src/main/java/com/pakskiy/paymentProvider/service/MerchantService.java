@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -123,11 +124,13 @@ public class MerchantService {
         return result;
     }
 
-    public Mono<MerchantEntity> checkByToken(String token) {
+    public Optional<MerchantEntity> getByToken(String token) {
         String pair = new String(Base64.decodeBase64(token.substring(6)));
         String login = pair.split(":")[0];
         String key = pair.split(":")[1];
 
-        return merchantRepository.findByLoginAndKey(login, key);
+        return Optional.ofNullable(merchantRepository.findByLoginAndKey(login, key).toFuture().join());
     }
+
+
 }

@@ -42,11 +42,11 @@ public class PayoutService {
     @SneakyThrows
     @Transactional
     public Mono<PayoutResponseDto> create(PayoutRequestDto payoutRequestDto, String token) {
-        MerchantEntity merchantEntity = merchantService.checkByToken(token).toFuture().join();
+        Optional<MerchantEntity> merchantEntityOptional = merchantService.getByToken(token);
 
-        if (merchantEntity != null) {
+        if (merchantEntityOptional.isPresent()) {
             check(payoutRequestDto);
-            Long merchantId = merchantEntity.getId();
+            Long merchantId = merchantEntityOptional.get().getId();
             Optional<AccountEntity> accountEntityOptional = accountService.getByMerchantId(merchantId);
             if (accountEntityOptional.isPresent()) {
                 long newDeposit = accountEntityOptional.get().getDepositAmount() + payoutRequestDto.getAmount();

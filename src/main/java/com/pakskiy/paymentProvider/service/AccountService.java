@@ -2,7 +2,6 @@ package com.pakskiy.paymentProvider.service;
 
 import com.pakskiy.paymentProvider.dto.account.AccountCreateRequestDto;
 import com.pakskiy.paymentProvider.dto.account.AccountCreateResponseDto;
-import com.pakskiy.paymentProvider.dto.account.AccountGetResponseDto;
 import com.pakskiy.paymentProvider.entity.AccountEntity;
 import com.pakskiy.paymentProvider.entity.MerchantEntity;
 import com.pakskiy.paymentProvider.repository.AccountRepository;
@@ -16,8 +15,6 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-
-import static com.pakskiy.paymentProvider.service.MerchantService.ISO_FORMATTER;
 
 @Slf4j
 @Service
@@ -36,31 +33,39 @@ public class AccountService {
 
     @SneakyThrows
     public Mono<AccountCreateResponseDto> create(AccountCreateRequestDto request, String token) {
-        MerchantEntity merchant = merchantService.checkByToken(token).toFuture().get();
+        Optional<MerchantEntity> merchantEntityOptional = merchantService.getByToken(token);
 
-        return accountRepository.save(AccountEntity.builder().merchantId(merchant.getId())
-                        .depositAmount(request.getDepositAmount())
-                        .limitAmount(request.getLimitAmount()).isOverdraft(0)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .build())
-                .map(el -> AccountCreateResponseDto.builder().id(el.getId()).depositAmount(el.getDepositAmount())
-                        .limitAmount(el.getLimitAmount()).build())
-                .onErrorResume(ex -> {
-                    if (ex instanceof DuplicateKeyException) {
-                        log.warn("ERR_SAVE_DUPLICATE {}", ex.getMessage(), ex);
-                        return Mono.just(AccountCreateResponseDto.builder()
-                                .errorCode("-1001").build());
-                    } else if (ex instanceof DataAccessException) {
-                        log.warn("ERR_SAVE_ACCESS {}", ex.getMessage(), ex);
-                        return Mono.just(AccountCreateResponseDto.builder()
-                                .errorCode("-1002").build());
-                    } else {
-                        log.warn("ERR_SAVE_COMMON {}", ex.getMessage(), ex);
-                        return Mono.just(AccountCreateResponseDto.builder()
-                                .errorCode("-1003").build());
-                    }
-                });
+        if (merchantEntityOptional.isPresent()) {
+            return accountRepository.save(AccountEntity.builder().merchantId(merchantEntityOptional.get().getId())
+                            .depositAmount(request.getDepositAmount())
+                            .limitAmount(request.getLimitAmount()).isOverdraft(0)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build())
+                    .map(el -> AccountCreateResponseDto.builder().id(el.getId()).depositAmount(el.getDepositAmount())
+                            .limitAmount(el.getLimitAmount()).build())
+                    .onErrorResume(ex -> {
+                        if (ex instanceof DuplicateKeyException) {
+                            log.warn("ERR_SAVE_DUPLICATE {}", ex.getMessage(), ex);
+                            return Mono.just(AccountCreateResponseDto.builder()
+                                    .errorCode("-1001").build());
+                        } else if (ex instanceof DataAccessException) {
+                            log.warn("ERR_SAVE_ACCESS {}", ex.getMessage(), ex);
+                            return Mono.just(AccountCreateResponseDto.builder()
+                                    .errorCode("-1002").build());
+                        } else {
+                            log.warn("ERR_SAVE_COMMON {}", ex.getMessage(), ex);
+                            return Mono.just(AccountCreateResponseDto.builder()
+                                    .errorCode("-1003").build());
+                        }
+                    });
+        } else {
+            log.warn("ERR_CREATE_NOT_PRESENT");
+            return Mono.just(AccountCreateResponseDto.builder()
+                    .errorCode("-1001").build());
+        }
+
+
     }
 
 //    public Mono<AccountGetResponseDto> get(String token) {
