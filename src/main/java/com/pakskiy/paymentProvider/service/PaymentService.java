@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuples;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -49,11 +51,11 @@ public class PaymentService {
 
             Long merchantId = merchantEntityOptional.get().getId();
 
-            Long transactionId = save(merchantId, request);
-
-            if (transactionId > 0) {
-                return Mono.just(PaymentResponseDto.builder().transactionId(transactionId).status(PaymentResponseDto.Statuses.APPROVED).message("OK").build());
-            }
+//            Long transactionId = save(merchantId, request);
+//
+//            if (transactionId > 0) {
+//                return Mono.just(PaymentResponseDto.builder().transactionId(transactionId).status(PaymentResponseDto.Statuses.APPROVED).message("OK").build());
+//            }
         } catch (Exception e) {
             log.error("ERR_CREATE {}", e.getMessage(), e);
         }
@@ -86,7 +88,7 @@ public class PaymentService {
     }
 
     @SneakyThrows
-    private Long save(Long merchantId, PaymentRequestDto request) {
+    private Mono<Long> save(Long merchantId, PaymentRequestDto request) {
         check(request);
 
         Optional<AccountEntity> accountEntityOptional = accountService.getByMerchantId(merchantId);
@@ -109,7 +111,10 @@ public class PaymentService {
         String customerData = objectMapper.writeValueAsString(request.getCustomer());
         String cardData = objectMapper.writeValueAsString(request.getCardData());
 
-        transactionalOperator.transactional(Mono.defer(() ->
+
+
+        return transactionalOperator.transactional(
+                Mono.defer(() ->
                 saveTransaction(TransactionEntity.builder()
                         .merchantId(merchantId)
                         .providerTransactionId(request.getProviderTransactionId())
@@ -123,11 +128,16 @@ public class PaymentService {
                         .notificationUrl(request.getNotificationUrl())
                         .customerData(customerData)//here need parse card data
                         .status("COMPLETED")
-                        .build()).map(el-> {
-                    transactionId.set(el.getId());
-                    System.out.println("transactionId: " + transactionId);
-                    return el.getId();
-                }).flatMap(saveId -> saveAccount(accountEntity)))).toFuture().join();
+                        .build())
+                        .flatMap(el -> Mono.just(el.getId()))
+                        .flatMap(tuple1 -> Mono.just(Tuples.of(saveAccount(accountEntity), tuple1)))
+                        .flatMap(tuple2 -> Mono.just(Tuples.of(paymentRepository.save(TransactionEntity.builder().id(tuple2.getT2()).status("COMPLETED").build()), tuple2.getT2())))
+                        .map(el -> el.getT2())));
+
+//                        .map(TransactionEntity::getId).subscribe()
+
+
+
 
 //        TransactionEntity transactionEntity = saveTransaction(TransactionEntity.builder()
 //                .merchantId(merchantId)
@@ -149,7 +159,7 @@ public class PaymentService {
 //        if (updCnt == 0) {
 //            throw new RuntimeException();
 //        }
-        return transactionId.get();
+//        return transactionId.get();
     }
 
     private Mono<TransactionEntity> saveTransaction(TransactionEntity transactionEntity) {

@@ -2,7 +2,9 @@ package com.pakskiy.paymentProvider.entity;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,7 +14,7 @@ import java.util.Date;
 @Data
 @Builder
 @Table(name = "transactions")
-public final class TransactionEntity {
+public final class TransactionEntity implements Persistable<Long> {
     @Id
     @Column(value = "id") private Long id;
     @Column(value = "amount") private Long amount;
@@ -27,4 +29,9 @@ public final class TransactionEntity {
     @Column(value = "created_at") private Date createdAt;
     @Column(value = "updated_at") private Date updatedAt;
     @Column(value = "status") private String status;
+
+    @Override
+    public boolean isNew() {
+        return this.id == null;
+    }
 }
