@@ -42,56 +42,56 @@ public class PayoutService {
     @SneakyThrows
     @Transactional
     public Mono<PayoutResponseDto> create(PayoutRequestDto payoutRequestDto, String token) {
-        Optional<MerchantEntity> merchantEntityOptional = merchantService.getByToken(token);
-
-        if (merchantEntityOptional.isPresent()) {
-            check(payoutRequestDto);
-            Long merchantId = merchantEntityOptional.get().getId();
-            Optional<AccountEntity> accountEntityOptional = accountService.getByMerchantId(merchantId);
-            if (accountEntityOptional.isPresent()) {
-                long newDeposit = accountEntityOptional.get().getDepositAmount() + payoutRequestDto.getAmount();
-
-                AtomicReference<Long> transactionId = new AtomicReference<>(0L);
-                AccountEntity accountEntity = AccountEntity.builder()
-                        .merchantId(merchantId).depositAmount(newDeposit)
-                        .limitAmount(accountEntityOptional.get().getLimitAmount())
-                        .isOverdraft(accountEntityOptional.get().getIsOverdraft())
-                        .createdAt(accountEntityOptional.get().getCreatedAt())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                String customerData = objectMapper.writeValueAsString(payoutRequestDto.getCustomer());
-                String cardData = objectMapper.writeValueAsString(payoutRequestDto.getCardData());
-
-                return Mono.fromSupplier(() -> paymentRepository.save(TransactionEntity.builder()
-                                .merchantId(merchantId)
-                                .providerTransactionId(payoutRequestDto.getProviderTransactionId())
-                                .method(payoutRequestDto.getPaymentMethod())
-                                .amount(payoutRequestDto.getAmount())
-                                .currencyId(payoutRequestDto.getCurrency().toUpperCase())
-                                .createdAt(payoutRequestDto.getCreatedAt())
-                                .updatedAt(payoutRequestDto.getUpdatedAt())
-                                .cardData(cardData)//here need parse card data
-                                .languageId(payoutRequestDto.getLanguage().toUpperCase())
-                                .notificationUrl(payoutRequestDto.getNotificationUrl())
-                                .customerData(customerData)//here need parse card data
-                                .status("COMPLETED")
-                                .build())
-                        .doOnSuccess(el -> transactionId.set(el.getId()))
-                        .then(update(accountEntity))
-                        .then(notificationService.send())
-                        .then(Mono.just(PayoutResponseDto.builder().payoutId(transactionId.get()).status(PayoutResponseDto.Statuses.COMPLETED).message("OK").build()))
-                        .onErrorResume(ex -> {
-                            if (ex instanceof DataAccessException) {
-                                log.warn("ERR_SAVE_ACCESS {}", ex.getMessage(), ex);
-                                return Mono.just(PayoutResponseDto.builder().status(PayoutResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_COMMON").build());
-                            } else {
-                                log.warn("ERR_SAVE_COMMON {}", ex.getMessage(), ex);
-                                return Mono.just(PayoutResponseDto.builder().status(PayoutResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
-                            }
-                        }).toFuture().join());
-            }
-        }
+//        Optional<MerchantEntity> merchantEntityOptional = merchantService.getByToken(token);
+//
+//        if (merchantEntityOptional.isPresent()) {
+//            check(payoutRequestDto);
+//            Long merchantId = merchantEntityOptional.get().getId();
+//            Optional<AccountEntity> accountEntityOptional = accountService.getByMerchantId(merchantId);
+//            if (accountEntityOptional.isPresent()) {
+//                long newDeposit = accountEntityOptional.get().getDepositAmount() + payoutRequestDto.getAmount();
+//
+//                AtomicReference<Long> transactionId = new AtomicReference<>(0L);
+//                AccountEntity accountEntity = AccountEntity.builder()
+//                        .merchantId(merchantId).depositAmount(newDeposit)
+//                        .limitAmount(accountEntityOptional.get().getLimitAmount())
+//                        .isOverdraft(accountEntityOptional.get().getIsOverdraft())
+//                        .createdAt(accountEntityOptional.get().getCreatedAt())
+//                        .updatedAt(LocalDateTime.now())
+//                        .build();
+//
+//                String customerData = objectMapper.writeValueAsString(payoutRequestDto.getCustomer());
+//                String cardData = objectMapper.writeValueAsString(payoutRequestDto.getCardData());
+//
+//                return Mono.fromSupplier(() -> paymentRepository.save(TransactionEntity.builder()
+//                                .merchantId(merchantId)
+//                                .providerTransactionId(payoutRequestDto.getProviderTransactionId())
+//                                .method(payoutRequestDto.getPaymentMethod())
+//                                .amount(payoutRequestDto.getAmount())
+//                                .currencyId(payoutRequestDto.getCurrency().toUpperCase())
+//                                .createdAt(payoutRequestDto.getCreatedAt())
+//                                .updatedAt(payoutRequestDto.getUpdatedAt())
+//                                .cardData(cardData)//here need parse card data
+//                                .languageId(payoutRequestDto.getLanguage().toUpperCase())
+//                                .notificationUrl(payoutRequestDto.getNotificationUrl())
+//                                .customerData(customerData)//here need parse card data
+//                                .status("COMPLETED")
+//                                .build())
+//                        .doOnSuccess(el -> transactionId.set(el.getId()))
+//                        .then(update(accountEntity))
+//                        .then(notificationService.send())
+//                        .then(Mono.just(PayoutResponseDto.builder().payoutId(transactionId.get()).status(PayoutResponseDto.Statuses.COMPLETED).message("OK").build()))
+//                        .onErrorResume(ex -> {
+//                            if (ex instanceof DataAccessException) {
+//                                log.warn("ERR_SAVE_ACCESS {}", ex.getMessage(), ex);
+//                                return Mono.just(PayoutResponseDto.builder().status(PayoutResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_COMMON").build());
+//                            } else {
+//                                log.warn("ERR_SAVE_COMMON {}", ex.getMessage(), ex);
+//                                return Mono.just(PayoutResponseDto.builder().status(PayoutResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
+//                            }
+//                        }).toFuture().join());
+//            }
+//        }
 
         return Mono.just(PayoutResponseDto.builder().build());
     }

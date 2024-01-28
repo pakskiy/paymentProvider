@@ -3,7 +3,6 @@ package com.pakskiy.paymentProvider.service;
 import com.pakskiy.paymentProvider.dto.account.AccountCreateRequestDto;
 import com.pakskiy.paymentProvider.dto.account.AccountCreateResponseDto;
 import com.pakskiy.paymentProvider.entity.AccountEntity;
-import com.pakskiy.paymentProvider.entity.MerchantEntity;
 import com.pakskiy.paymentProvider.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -23,8 +21,8 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final MerchantService merchantService;
 
-    public Optional<AccountEntity> getByMerchantId(Long id) {
-        return Optional.ofNullable(accountRepository.findByMerchantId(id).toFuture().join());
+    public Mono<AccountEntity> getByMerchantId(Long id) {
+        return accountRepository.findByMerchantId(id);
     }
 
     public Mono<AccountEntity> save(AccountEntity accountEntity) {
@@ -33,15 +31,15 @@ public class AccountService {
 
     @SneakyThrows
     public Mono<AccountCreateResponseDto> create(AccountCreateRequestDto request, String token) {
-        Optional<MerchantEntity> merchantEntityOptional = merchantService.getByToken(token);
-
-        if (merchantEntityOptional.isPresent()) {
-            return accountRepository.save(AccountEntity.builder().merchantId(merchantEntityOptional.get().getId())
+        try {
+            return merchantService.getByToken(token)
+                    .flatMap(merchant -> accountRepository.save(AccountEntity.builder().merchantId(merchant.getId())
                             .depositAmount(request.getDepositAmount())
                             .limitAmount(request.getLimitAmount()).isOverdraft(0)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
-                            .build())
+                            .build()))
+                    .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
                     .map(el -> AccountCreateResponseDto.builder().id(el.getId()).depositAmount(el.getDepositAmount())
                             .limitAmount(el.getLimitAmount()).build())
                     .onErrorResume(ex -> {
@@ -59,13 +57,11 @@ public class AccountService {
                                     .errorCode("-1003").build());
                         }
                     });
-        } else {
+        } catch (Exception e) {
             log.warn("ERR_CREATE_NOT_PRESENT");
             return Mono.just(AccountCreateResponseDto.builder()
                     .errorCode("-1001").build());
         }
-
-
     }
 
 //    public Mono<AccountGetResponseDto> get(String token) {

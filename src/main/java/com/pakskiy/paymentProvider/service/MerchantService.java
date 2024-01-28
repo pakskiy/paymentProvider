@@ -124,12 +124,12 @@ public class MerchantService {
         return result;
     }
 
-    public Optional<MerchantEntity> getByToken(String token) {
+    public Mono<MerchantEntity> getByToken(String token) {
         String pair = new String(Base64.decodeBase64(token.substring(6)));
         String login = pair.split(":")[0];
         String key = pair.split(":")[1];
 
-        return Optional.ofNullable(merchantRepository.findByLoginAndKey(login, key).toFuture().join());
+        return merchantRepository.findByLoginAndKey(login, key);
     }
 
 
