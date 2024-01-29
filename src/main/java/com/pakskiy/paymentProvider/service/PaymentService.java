@@ -6,6 +6,7 @@ import com.pakskiy.paymentProvider.dto.payment.PaymentResponseDto;
 import com.pakskiy.paymentProvider.entity.AccountEntity;
 import com.pakskiy.paymentProvider.entity.MerchantEntity;
 import com.pakskiy.paymentProvider.entity.TransactionEntity;
+import com.pakskiy.paymentProvider.repository.AccountRepository;
 import com.pakskiy.paymentProvider.repository.CountryRepository;
 import com.pakskiy.paymentProvider.repository.CurrencyRepository;
 import com.pakskiy.paymentProvider.repository.LanguageRepository;
@@ -41,6 +42,7 @@ public class PaymentService {
     private final DatabaseClient client;
     private final ObjectMapper objectMapper;
     private final TransactionalOperator transactionalOperator;
+    private final AccountRepository accountRepository;
 
     public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
         try {
@@ -53,7 +55,7 @@ public class PaymentService {
                     .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
                     .flatMap(tuple1 -> Mono.just(Tuples.of(paymentRepository.save(getTransactionEntity(request, tuple1.getMerchantId())), tuple1)))
                     .flatMap(tuple2 -> Mono.just(Tuples.of(tuple2.getT1().map(TransactionEntity::getId), tuple2.getT2().getDepositAmount() + request.getAmount(), tuple2.getT2().getId())))
-                    .doOnSuccess(tuple3 -> Mono.just(Tuples.of(tuple3.getT1(), accountService.save(AccountEntity.builder().id(tuple3.getT3()).depositAmount(tuple3.getT2()).updatedAt(LocalDateTime.now()).build()))))
+                    .flatMap(tuple3 -> Mono.just(Tuples.of(tuple3.getT1(), accountRepository.save(AccountEntity.builder().id(tuple3.getT3()).depositAmount(tuple3.getT2()).updatedAt(LocalDateTime.now()).build()))))
                     .flatMap(Tuple2::getT1);
 
 
