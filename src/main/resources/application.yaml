@@ -23,4 +23,9 @@ logging:
     org:
       springframework:
         data:
-          r2dbc=DEBUG:
+          r2dbc=TRACE:
+    io:
+      r2dbc:
+        postgresql:
+          QUERY: DEBUG
+          PARAM: DEBUG

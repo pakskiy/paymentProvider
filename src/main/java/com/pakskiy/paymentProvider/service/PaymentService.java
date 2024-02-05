@@ -16,17 +16,11 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
@@ -45,31 +39,31 @@ public class PaymentService {
     private final AccountRepository accountRepository;
 
     public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
-        try {
-            check(request);
 
-            Mono<Long> transactionId = merchantService.getByToken(token)
+        check(request).flatMap(el -> {
+            return merchantService.getByToken(token)
                     .map(MerchantEntity::getId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
                     .flatMap(accountService::getByMerchantId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
-                    .flatMap(tuple1 -> Mono.just(Tuples.of(paymentRepository.save(getTransactionEntity(request, tuple1.getMerchantId())), tuple1)))
-                    .flatMap(tuple2 -> Mono.just(Tuples.of(tuple2.getT1().map(TransactionEntity::getId), tuple2.getT2().getDepositAmount() + request.getAmount(), tuple2.getT2().getId())))
-                    .flatMap(tuple3 -> Mono.just(Tuples.of(tuple3.getT1(), accountRepository.save(AccountEntity.builder().id(tuple3.getT3()).depositAmount(tuple3.getT2()).updatedAt(LocalDateTime.now()).build()))))
-                    .flatMap(Tuple2::getT1);
+                    .flatMap(account -> paymentRepository.save(getTransactionEntity(request, account.getMerchantId()))
+                            .flatMap(el ->
+                                    {
+                                        account.setId(500L);
+                                        account.setUpdatedAt(LocalDateTime.now());
+                                        account.setDepositAmount(account.getDepositAmount() + request.getAmount());
+                                        return accountRepository.save(account);
+                                    }
+                            ))
+                    .doOnError(ex -> log.error("Error save account"))
+                    .map(transaction -> {
+                        if (transaction.getId() != null && transaction.getId().compareTo(0L) > 0) {
+                            return PaymentResponseDto.builder().transactionId(transaction.getId()).status(PaymentResponseDto.Statuses.APPROVED).message("OK").build();
+                        } else {
+                            return PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build();
+                        }
+                    })});
 
-
-
-            return transactionId.map(res -> {
-                if (res != null && res > 0) {
-                    return PaymentResponseDto.builder().transactionId(res).status(PaymentResponseDto.Statuses.APPROVED).message("OK").build();
-                }
-                return PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build();
-            });
-        } catch (Exception e) {
-            log.error("ERR_CREATE {}", e.getMessage(), e);
-            return Mono.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
-        }
 
     }
 
@@ -94,29 +88,29 @@ public class PaymentService {
                 .build();
     }
 
-    private void check(PaymentRequestDto paymentTransactionDto) {
-        checkCountry(paymentTransactionDto.getCustomer().getCountry().toUpperCase());
-        checkCurrency(paymentTransactionDto.getCurrency().toUpperCase());
-        checkLanguage(paymentTransactionDto.getLanguage().toUpperCase());
+    private Mono<Void> check(PaymentRequestDto paymentTransactionDto) {
+        return checkCountry(paymentTransactionDto.getCustomer().getCountry().toUpperCase())
+                .then(checkCurrency(paymentTransactionDto.getCurrency().toUpperCase()))
+                .then(checkLanguage(paymentTransactionDto.getLanguage().toUpperCase()));
     }
 
-    private void checkCountry(String id) {
-        if (!countryRepository.existsById(id).toFuture().join()) {
-            throw new RuntimeException("Resource country not found");
-        }
+    private Mono<Void> checkCountry(String id) {
+        return countryRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Resource country not found")))
+                .then();
     }
 
-    private void checkCurrency(String id) {
-        if (!currencyRepository.existsById(id).toFuture().join()) {
-            throw new RuntimeException("Resource currency not found");
-        }
+    private Mono<Void> checkCurrency(String id) {
+        return currencyRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Resource country not found")))
+                .then();
 
     }
 
-    private void checkLanguage(String id) {
-        if (!languageRepository.existsById(id).toFuture().join()) {
-            throw new RuntimeException("Resource language not found");
-        }
+    private Mono<Void> checkLanguage(String id) {
+        return languageRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Resource country not found")))
+                .then();
     }
 
 //    @SneakyThrows
