@@ -20,10 +20,6 @@ logging:
   level:
     liquibase: INFO
     root: INFO
-    org:
-      springframework:
-        data:
-          r2dbc=TRACE:
     io:
       r2dbc:
         postgresql:

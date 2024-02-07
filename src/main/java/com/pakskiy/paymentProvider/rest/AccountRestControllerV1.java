@@ -36,9 +36,9 @@ public class AccountRestControllerV1 {
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
 
-//    @GetMapping(value = "/get")
-//    public Mono<ResponseEntity<AccountGetResponseDto>> get(@RequestHeader("Authorization") @NotNull @NotEmpty String token) {
-//        return accountService.get(token)
-//                .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
-//    }
+    @GetMapping(value = "/get")
+    public Mono<ResponseEntity<AccountGetResponseDto>> get(@RequestHeader("Authorization") @NotNull @NotEmpty String token) {
+        return accountService.get(token)
+                .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
+    }
 }

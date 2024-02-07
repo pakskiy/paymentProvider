@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -27,101 +26,76 @@ public class MerchantService {
     final static DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
     public Mono<MerchantCreateResponseDto> create(MerchantCreateRequestDto request) {
-        Mono<MerchantCreateResponseDto> result;
-        try {
-            result = merchantRepository.save(MerchantEntity.builder()
-                            .login(request.getLogin())
-                            .key(request.getKey())
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .status("ACTIVE")
-                            .build())
-                    .map(el -> MerchantCreateResponseDto.builder().id(el.getId()).login(el.getLogin()).key(el.getKey()).build())
-                    .onErrorResume(ex -> {
-                        if (ex instanceof DuplicateKeyException) {
-                            log.warn("ERR_SAVE_DUPLICATE {}", ex.getMessage(), ex);
-                            return Mono.just(MerchantCreateResponseDto.builder()
-                                    .errorCode("-1001").build());
-                        } else if (ex instanceof DataAccessException) {
-                            log.warn("ERR_SAVE_ACCESS {}", ex.getMessage(), ex);
-                            return Mono.just(MerchantCreateResponseDto.builder()
-                                    .errorCode("-1002").build());
-                        } else {
-                            log.warn("ERR_SAVE_COMMON {}", ex.getMessage(), ex);
-                            return Mono.just(MerchantCreateResponseDto.builder()
-                                    .errorCode("-1003").build());
-                        }
-                    });
-        } catch (Exception e) {
-            log.error("ERR_USER_SERVICE", e);
-            result = Mono.just(MerchantCreateResponseDto.builder().errorCode("-1003").build());
-        }
-        return result;
+        return merchantRepository.save(MerchantEntity.builder()
+                        .login(request.getLogin())
+                        .key(request.getKey())
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .status("ACTIVE")
+                        .build())
+                .map(el -> MerchantCreateResponseDto.builder().id(el.getId()).login(el.getLogin()).key(el.getKey()).build())
+                .onErrorResume(ex -> {
+                    if (ex instanceof DuplicateKeyException) {
+                        log.warn("ERR_SAVE_DUPLICATE {}", ex.getMessage(), ex);
+                        return Mono.just(MerchantCreateResponseDto.builder()
+                                .errorCode("-1001").build());
+                    } else if (ex instanceof DataAccessException) {
+                        log.warn("ERR_SAVE_ACCESS {}", ex.getMessage(), ex);
+                        return Mono.just(MerchantCreateResponseDto.builder()
+                                .errorCode("-1002").build());
+                    } else {
+                        log.warn("ERR_SAVE_COMMON {}", ex.getMessage(), ex);
+                        return Mono.just(MerchantCreateResponseDto.builder()
+                                .errorCode("-1003").build());
+                    }
+                });
+
     }
 
     public Mono<MerchantUpdateResponseDto> update(MerchantUpdateRequestDto request) {
-        Mono<MerchantUpdateResponseDto> result;
+        return merchantRepository.findById(request.getId())
+                .switchIfEmpty(Mono.error(new RuntimeException("Merchant not founded")))
+                .flatMap(merchant -> {
+                    merchant.setLogin(request.getLogin());
+                    merchant.setKey(request.getKey());
+                    merchant.setUpdatedAt(LocalDateTime.now());
+                    return merchantRepository.save(merchant);
+                }).map(el -> MerchantUpdateResponseDto.builder().id(el.getId()).key(el.getKey()).build())
+                .onErrorResume(ex -> {
+                    if (ex instanceof DataAccessException) {
+                        log.warn("ERR_UPDATE_ACCESS {}", ex.getMessage(), ex);
+                        return Mono.just(MerchantUpdateResponseDto.builder()
+                                .errorCode("-1004").build());
+                    } else {
+                        log.warn("ERR_UPDATE_COMMON {}", ex.getMessage(), ex);
+                        return Mono.just(MerchantUpdateResponseDto.builder()
+                                .errorCode("-1005").build());
+                    }
+                });
 
-        try {
-            result = merchantRepository.findById(request.getId()).flatMap(el ->
-                            merchantRepository.save(MerchantEntity.builder()
-                                    .id(el.getId())
-                                    .login(el.getLogin())
-                                    .key(request.getKey())
-                                    .createdAt(el.getCreatedAt())
-                                    .updatedAt(LocalDateTime.now())
-                                    .status(el.getStatus())
-                                    .build()))
-                    .map(el -> MerchantUpdateResponseDto.builder().id(el.getId()).key(el.getKey()).build())
-                    .switchIfEmpty(Mono.just(MerchantUpdateResponseDto.builder().errorCode("-1006").build()))
-                    .onErrorResume(ex -> {
-                        if (ex instanceof DataAccessException) {
-                            log.warn("ERR_UPDATE_ACCESS {}", ex.getMessage(), ex);
-                            return Mono.just(MerchantUpdateResponseDto.builder()
-                                    .errorCode("-1004").build());
-                        } else {
-                            log.warn("ERR_UPDATE_COMMON {}", ex.getMessage(), ex);
-                            return Mono.just(MerchantUpdateResponseDto.builder()
-                                    .errorCode("-1005").build());
-                        }
-                    });
-        } catch (Exception e) {
-            log.error("ERR_USER_SERVICE", e);
-            result = Mono.just(MerchantUpdateResponseDto.builder().errorCode("-1007").build());
-        }
-        return result;
     }
 
     public Mono<MerchantGetResponseDto> get(Long id) {
-        Mono<MerchantGetResponseDto> result;
-
-        try {
-            result = merchantRepository.findById(id)
-                    .map(el -> MerchantGetResponseDto.builder()
-                            .id(el.getId())
-                            .login(el.getLogin())
-                            .key(el.getKey())
-                            .createdAt(el.getCreatedAt().format(ISO_FORMATTER))
-                            .updatedAt(el.getUpdatedAt().format(ISO_FORMATTER))
-                            .status(el.getStatus()).build())
-                    .switchIfEmpty(Mono.just(MerchantGetResponseDto.builder()
-                            .errorCode("-1006").build()))
-                    .onErrorResume(ex -> {
-                        if (ex instanceof DataAccessException) {
-                            log.warn("ERR_UPDATE_ACCESS {}", ex.getMessage(), ex);
-                            return Mono.just(MerchantGetResponseDto.builder()
-                                    .errorCode("-1007").build());
-                        } else {
-                            log.warn("ERR_UPDATE_COMMON {}", ex.getMessage(), ex);
-                            return Mono.just(MerchantGetResponseDto.builder()
-                                    .errorCode("-1008").build());
-                        }
-                    });
-        } catch (Exception e) {
-            log.error("ERR_USER_SERVICE", e);
-            result = Mono.just(MerchantGetResponseDto.builder().errorCode("-1010").build());
-        }
-        return result;
+        return merchantRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Merchant not founded")))
+                .map(el -> MerchantGetResponseDto.builder()
+                        .id(el.getId())
+                        .login(el.getLogin())
+                        .key(el.getKey())
+                        .createdAt(el.getCreatedAt().format(ISO_FORMATTER))
+                        .updatedAt(el.getUpdatedAt().format(ISO_FORMATTER))
+                        .status(el.getStatus()).build())
+                .onErrorResume(ex -> {
+                    if (ex instanceof DataAccessException) {
+                        log.warn("ERR_UPDATE_ACCESS {}", ex.getMessage(), ex);
+                        return Mono.just(MerchantGetResponseDto.builder()
+                                .errorCode("-1007").build());
+                    } else {
+                        log.warn("ERR_UPDATE_COMMON {}", ex.getMessage(), ex);
+                        return Mono.just(MerchantGetResponseDto.builder()
+                                .errorCode("-1008").build());
+                    }
+                });
     }
 
     public Mono<MerchantEntity> getByToken(String token) {

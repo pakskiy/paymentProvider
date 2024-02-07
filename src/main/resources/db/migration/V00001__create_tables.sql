@@ -64,6 +64,7 @@ CREATE TABLE transactions
     language_id varchar(2),
     notification_url varchar(2000),
     customer_data varchar(2000) NOT NULL,
+    type varchar(15) NOT NULL,
     created_at timestamp NOT NULL default NOW(),
     updated_at timestamp,
     status varchar(255) NOT NULL,
