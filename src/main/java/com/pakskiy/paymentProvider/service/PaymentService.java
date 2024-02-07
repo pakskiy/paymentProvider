@@ -1,6 +1,7 @@
 package com.pakskiy.paymentProvider.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pakskiy.paymentProvider.dto.merchant.MerchantCreateResponseDto;
 import com.pakskiy.paymentProvider.dto.payment.PaymentRequestDto;
 import com.pakskiy.paymentProvider.dto.payment.PaymentResponseDto;
 import com.pakskiy.paymentProvider.entity.AccountEntity;
@@ -40,31 +41,22 @@ public class PaymentService {
 
     public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
 
-        check(request).flatMap(el -> {
-            return merchantService.getByToken(token)
+        return check(request).then(Mono.defer(() -> {
+            Mono<Long> transactionId = merchantService.getByToken(token)
                     .map(MerchantEntity::getId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
                     .flatMap(accountService::getByMerchantId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
-                    .flatMap(account -> paymentRepository.save(getTransactionEntity(request, account.getMerchantId()))
-                            .flatMap(el ->
-                                    {
-                                        account.setId(500L);
-                                        account.setUpdatedAt(LocalDateTime.now());
-                                        account.setDepositAmount(account.getDepositAmount() + request.getAmount());
-                                        return accountRepository.save(account);
-                                    }
-                            ))
-                    .doOnError(ex -> log.error("Error save account"))
-                    .map(transaction -> {
-                        if (transaction.getId() != null && transaction.getId().compareTo(0L) > 0) {
-                            return PaymentResponseDto.builder().transactionId(transaction.getId()).status(PaymentResponseDto.Statuses.APPROVED).message("OK").build();
-                        } else {
-                            return PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build();
-                        }
-                    })});
+                    .flatMap(account -> paymentRepository.save(getTransactionEntity(request, account.getMerchantId())))
+                    .map(transactionEntity -> transactionEntity.getId());
 
-
+            return transactionId.map(res -> {
+                if (res != null && res > 0) {
+                    return PaymentResponseDto.builder().transactionId(res).status(PaymentResponseDto.Statuses.IN_PROCESS).message("OK").build();
+                }
+                return PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build();
+            });
+        })).onErrorResume(ex -> Mono.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build()));
     }
 
     @SneakyThrows
@@ -84,7 +76,7 @@ public class PaymentService {
                 .languageId(request.getLanguage().toUpperCase())
                 .notificationUrl(request.getNotificationUrl())
                 .customerData(customerData)//here need parse card data
-                .status("COMPLETED")
+                .status("IN_PROCESS")
                 .build();
     }
 
