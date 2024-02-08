@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,7 +39,7 @@ public class PaymentService {
                     .flatMap(accountService::getByMerchantId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
                     .flatMap(account -> paymentRepository.save(getTransactionEntity(request, account.getMerchantId())))
-                    .map(transactionEntity -> transactionEntity.getId());
+                    .map(transactionEntity -> Optional.ofNullable(transactionEntity.getId()).orElse(0L));
 
             return transactionId.map(res -> {
                 if (res != null && res > 0) {
@@ -89,7 +91,6 @@ public class PaymentService {
         return currencyRepository.findById(id)
                 .switchIfEmpty(Mono.error(new RuntimeException("Resource country not found")))
                 .then();
-
     }
 
     private Mono<Void> checkLanguage(String id) {
