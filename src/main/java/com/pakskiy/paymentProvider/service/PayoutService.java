@@ -18,6 +18,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
+import static com.pakskiy.paymentProvider.dto.TransactionStatus.IN_PROGRESS;
+import static com.pakskiy.paymentProvider.dto.TransactionType.OUT;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -44,13 +48,13 @@ public class PayoutService {
 
             return transactionId.map(res -> {
                 if (res != null && res > 0) {
-                    return PayoutResponseDto.builder().payoutId(res).status(PayoutResponseDto.Statuses.IN_PROGRESS).message("OK").build();
+                    return PayoutResponseDto.builder().payoutId(res).status(IN_PROGRESS).message("OK").build();
                 }
-                return PayoutResponseDto.builder().status(PayoutResponseDto.Statuses.FAILED).message("PAYOUT_METHOD_NOT_ALLOWED").build();
+                return PayoutResponseDto.builder().status(FAILED).message("PAYOUT_METHOD_NOT_ALLOWED").build();
             });
         })).onErrorResume(ex -> {
             log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
-            return Mono.just(PayoutResponseDto.builder().status(PayoutResponseDto.Statuses.FAILED).message("PAYOUT_METHOD_NOT_ALLOWED").build());
+            return Mono.just(PayoutResponseDto.builder().status(FAILED).message("PAYOUT_METHOD_NOT_ALLOWED").build());
         });
     }
 
@@ -94,9 +98,9 @@ public class PayoutService {
                 .cardData(cardData)//here need parse card data
                 .languageId(request.getLanguage().toUpperCase())
                 .notificationUrl(request.getNotificationUrl())
-                .type("PAYOUT")
+                .type(OUT)
                 .customerData(customerData)//here need parse card data
-                .status("IN_PROCESS")
+                .status(IN_PROGRESS)
                 .build();
     }
 }

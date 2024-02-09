@@ -1,5 +1,7 @@
 package com.pakskiy.paymentProvider.entity;
 
+import com.pakskiy.paymentProvider.dto.TransactionStatus;
+import com.pakskiy.paymentProvider.dto.TransactionType;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,10 +28,11 @@ public final class TransactionEntity implements Persistable<Long> {
     @Column(value = "language_id") private String languageId;
     @Column(value = "notification_url") private String notificationUrl;
     @Column(value = "customer_data") private String customerData;
-    @Column(value = "type") private String type; //0-payment or 1-payout
+    @Column(value = "type") private TransactionType type; //IN-payment or OUT-payout
     @Column(value = "created_at") private Date createdAt;
     @Column(value = "updated_at") private Date updatedAt;
-    @Column(value = "status") private String status;
+//    @Column(value = "status") private String status;
+    @Column(value = "status") private TransactionStatus status;
 
     @Override
     public boolean isNew() {

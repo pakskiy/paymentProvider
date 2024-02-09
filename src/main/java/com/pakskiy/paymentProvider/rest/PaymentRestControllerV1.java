@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import static com.pakskiy.paymentProvider.dto.payment.PaymentResponseDto.Statuses.FAILED;
+import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
 
 @RestController
 @RequestMapping("/api/v1/payments")

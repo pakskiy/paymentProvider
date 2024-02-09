@@ -1,5 +1,7 @@
 server:
   port: 8045
+app:
+  clearingTickSeconds: 5
 spring:
   main:
     web-application-type: reactive

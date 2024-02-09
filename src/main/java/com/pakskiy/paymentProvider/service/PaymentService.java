@@ -18,6 +18,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
+import static com.pakskiy.paymentProvider.dto.TransactionStatus.IN_PROGRESS;
+import static com.pakskiy.paymentProvider.dto.TransactionType.IN;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -43,13 +47,13 @@ public class PaymentService {
 
             return transactionId.map(res -> {
                 if (res != null && res > 0) {
-                    return PaymentResponseDto.builder().transactionId(res).status(PaymentResponseDto.Statuses.IN_PROCESS).message("OK").build();
+                    return PaymentResponseDto.builder().transactionId(res).status(IN_PROGRESS).message("OK").build();
                 }
-                return PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build();
+                return PaymentResponseDto.builder().status(FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build();
             });
         })).onErrorResume(ex -> {
             log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
-            return Mono.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
+            return Mono.just(PaymentResponseDto.builder().status(FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
         });
     }
 
@@ -69,9 +73,9 @@ public class PaymentService {
                 .cardData(cardData)//here need parse card data
                 .languageId(request.getLanguage().toUpperCase())
                 .notificationUrl(request.getNotificationUrl())
-                .type("PAYMENT")
+                .type(IN)
                 .customerData(customerData)//here need parse card data
-                .status("IN_PROCESS")
+                .status(IN_PROGRESS)
                 .build();
     }
 
@@ -103,6 +107,6 @@ public class PaymentService {
 
 //        paymentRepository.findAllById
 
-        return Flux.just(PaymentResponseDto.builder().status(PaymentResponseDto.Statuses.FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
+        return Flux.just(PaymentResponseDto.builder().status(FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
     }
 }

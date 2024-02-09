@@ -2,6 +2,7 @@ package com.pakskiy.paymentProvider.dto.payout;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.pakskiy.paymentProvider.dto.TransactionStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,9 +13,7 @@ public class PayoutResponseDto {
     @JsonProperty("payout_id")
     private Long payoutId;
     @JsonProperty("status")
-    private Statuses status;
+    private TransactionStatus status;
     @JsonProperty("message")
     private String message;
-
-    public enum Statuses {IN_PROGRESS, COMPLETED, FAILED}
 }
