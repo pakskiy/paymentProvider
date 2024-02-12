@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 public class PaymentRequestDto {
@@ -30,10 +29,10 @@ public class PaymentRequestDto {
     private String providerTransactionId;
     @NotNull
     @JsonProperty("createdAt")
-    private Date createdAt;
+    private LocalDateTime createdAt;
     @NotNull
     @JsonProperty("updatedAt")
-    private Date updatedAt;
+    private LocalDateTime updatedAt;
     @NotNull
     @JsonProperty("card_data")
     private TransactionCardDataDto cardData;

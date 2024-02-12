@@ -24,7 +24,7 @@ public class ClearingJob {
     public void init() {
         Flux.interval(Duration.ofSeconds(5), Duration.ofSeconds(CLEARING_TICK))
                 .publishOn(Schedulers.newSingle("clearing-thread"))
-                .map(tick -> clearingService.clear())
+                .flatMap(tick -> clearingService.clear())
                 .subscribe(
                         it -> log.info("Scheduled task executed at: {} ", java.time.LocalTime.now()),
                         error -> log.error("TIMER IS SHUTDOWN BECAUSE SEVERE ERROR ", error)

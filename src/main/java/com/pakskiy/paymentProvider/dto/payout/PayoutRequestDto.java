@@ -25,9 +25,9 @@ public class PayoutRequestDto {
     @JsonProperty("provider_transaction_id")
     private String providerTransactionId;
     @JsonProperty("createdAt")
-    private Date createdAt;
+    private LocalDateTime createdAt;
     @JsonProperty("updatedAt")
-    private Date updatedAt;
+    private LocalDateTime updatedAt;
     @JsonProperty("card_data")
     private TransactionCardDataDto cardData;
     @JsonProperty("language")

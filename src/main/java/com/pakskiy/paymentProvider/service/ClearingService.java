@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -16,17 +17,18 @@ import reactor.core.scheduler.Schedulers;
 @RequiredArgsConstructor
 public class ClearingService {
     private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
     public Mono<Void> clear() {
-        paymentRepository.findAllByStatusEqualsOrderByCreatedAt(TransactionStatus.IN_PROGRESS)
+        return paymentRepository.findAllByOrderByCreatedAt()
                 .groupBy(TransactionEntity::getMerchantId)
                 .parallel()
-                .runOn(Schedulers.parallel()).flatMap(el -> clearTransaction(el));
-        log.info("Void clear method");
-        return Mono.empty();
+                .runOn(Schedulers.parallel()).flatMap(this::clearTransaction).then();
     }
 
     private Publisher<?> clearTransaction(GroupedFlux<Long, TransactionEntity> el) {
+        return el.map(transactionEntity -> {
+            log.info("Transaction data {}", transactionEntity);
+            return transactionEntity;
+        }).then();
     }
-
-
 }

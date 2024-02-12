@@ -29,8 +29,8 @@ public final class TransactionEntity implements Persistable<Long> {
     @Column(value = "notification_url") private String notificationUrl;
     @Column(value = "customer_data") private String customerData;
     @Column(value = "type") private TransactionType type; //IN-payment or OUT-payout
-    @Column(value = "created_at") private Date createdAt;
-    @Column(value = "updated_at") private Date updatedAt;
+    @Column(value = "created_at") private LocalDateTime createdAt;
+    @Column(value = "updated_at") private LocalDateTime updatedAt;
 //    @Column(value = "status") private String status;
     @Column(value = "status") private TransactionStatus status;
 
