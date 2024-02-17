@@ -12,9 +12,12 @@ import com.pakskiy.paymentProvider.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Optional;
 
@@ -36,7 +39,7 @@ public class PaymentService {
 
     public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
 
-        return check(request).then(Mono.defer(() -> {
+        return validate(request).then(Mono.defer(() -> {
             Mono<Long> transactionId = merchantService.getByToken(token)
                     .map(MerchantEntity::getId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
@@ -79,27 +82,27 @@ public class PaymentService {
                 .build();
     }
 
-    private Mono<Void> check(PaymentRequestDto paymentTransactionDto) {
-        return checkCountry(paymentTransactionDto.getCustomer().getCountry().toUpperCase())
-                .then(checkCurrency(paymentTransactionDto.getCurrency().toUpperCase()))
-                .then(checkLanguage(paymentTransactionDto.getLanguage().toUpperCase()));
+    private Mono<Void> validate(PaymentRequestDto paymentTransactionDto) {
+        return validateCountry(paymentTransactionDto.getCustomer().getCountry().toUpperCase())
+                .then(validateCurrency(paymentTransactionDto.getCurrency().toUpperCase()))
+                .then(validateLanguage(paymentTransactionDto.getLanguage().toUpperCase()));
     }
 
-    private Mono<Void> checkCountry(String id) {
+    private Mono<Void> validateCountry(String id) {
         return countryRepository.findById(id)
                 .switchIfEmpty(Mono.error(new RuntimeException("Resource country not found")))
                 .then();
     }
 
-    private Mono<Void> checkCurrency(String id) {
+    private Mono<Void> validateCurrency(String id) {
         return currencyRepository.findById(id)
-                .switchIfEmpty(Mono.error(new RuntimeException("Resource country not found")))
+                .switchIfEmpty(Mono.error(new RuntimeException("Resource currency not found")))
                 .then();
     }
 
-    private Mono<Void> checkLanguage(String id) {
+    private Mono<Void> validateLanguage(String id) {
         return languageRepository.findById(id)
-                .switchIfEmpty(Mono.error(new RuntimeException("Resource country not found")))
+                .switchIfEmpty(Mono.error(new RuntimeException("Resource language not found")))
                 .then();
     }
 
@@ -109,4 +112,88 @@ public class PaymentService {
 
         return Flux.just(PaymentResponseDto.builder().status(FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
     }
+
+    public Publisher<Void> check() {
+        return paymentRepository.findAllByStatusEqualsOrderByCreatedAtAsc(IN_PROGRESS)
+                .groupBy(TransactionEntity::getMerchantId)
+                .parallel()
+                .runOn(Schedulers.parallel()).flatMap(this::checkTransaction).then();
+    }
+
+    private Mono<Void> checkTransaction(GroupedFlux<Long, TransactionEntity> el) {
+        return el.map(transactionEntity -> {
+            log.info("Transaction data {}", transactionEntity);
+
+            accountService.getByMerchantId(transactionEntity.getMerchantId()).switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
+                    .mapNotNull(entity -> {
+                        if (entity.getDepositAmount() <= transactionEntity.getAmount()) {
+                            entity.setDepositAmount(entity.getDepositAmount() - transactionEntity.getAmount());
+                            return entity;
+                        }
+                        return null;
+                    }).onErrorResume(ex -> {
+                        log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
+                        return Mono.empty();
+                    }).flatMap(account -> paymentRepository.save(account));
+
+
+            account.map(acc -> {
+                if (acc != null) {
+                    return paymentRepository.save(account);
+                }
+            });
+
+            if (account != null) {
+                return paymentRepository.save(account);
+            }
+
+
+            if (account.getDepositAmount() <= transactionEntity.getAmount()) {
+                account.setDepositAmount(account.getDepositAmount() - transactionEntity.getAmount());
+                paymentRepository.save(account);
+                return account;
+            }
+            ;
+
+                        .flatMap(account -> {
+                if (account.getDepositAmount() <= transactionEntity.getAmount()) {
+                    account.setDepositAmount(account.getDepositAmount() - transactionEntity.getAmount());
+                    paymentRepository.save(account);
+                    return account;
+                }
+                ;
+            });
+            return Mono.empty().then();
+        });
+        return Mono.empty().then();
+
+
+        map(transactionEntity -> {
+            log.info("Transaction data {}", transactionEntity);
+
+            accountService.getByMerchantId(transactionEntity.getMerchantId())
+                    .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
+                    .flatMap(account -> account.getDepositAmount()).flatMap()
+            if (account.getDepositAmount() <= transactionEntity.getAmount()) {
+                account.setDepositAmount(account.getDepositAmount() - transactionEntity.getAmount());
+                return paymentRepository.save(account);
+            }
+            return account;
+        })
+    }).
+
+    then();
+
+//            return accountEntity.flatMap(account -> {
+//                if(account.getDepositAmount() <= transactionEntity.getAmount()) {
+//                    account.setDepositAmount(account.getDepositAmount() -transactionEntity.getAmount());
+//                    paymentRepository.save(account).then();
+//                }
+//                return accountEntity;
+//            });
+//
+//            paymentRepository.save()
+//
+//            return transactionEntity;
+}
 }
