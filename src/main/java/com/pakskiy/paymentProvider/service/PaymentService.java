@@ -107,11 +107,10 @@ public class PaymentService {
     }
 
     public Flux<PaymentResponseDto> report() {
-
 //        paymentRepository.findAllById
-
         return Flux.just(PaymentResponseDto.builder().status(FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
     }
+    
 
     public Publisher<Void> check() {
         return paymentRepository.findAllByStatusEqualsOrderByCreatedAtAsc(IN_PROGRESS)
