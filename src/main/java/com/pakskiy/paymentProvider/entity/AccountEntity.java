@@ -1,5 +1,8 @@
 package com.pakskiy.paymentProvider.entity;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -25,8 +28,10 @@ public class AccountEntity implements Persistable<Long> {
     @Column(value = "is_overdraft")
     private int isOverdraft;
     @Column(value = "created_at")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime createdAt;
     @Column(value = "updated_at")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     private LocalDateTime updatedAt;
     @Override
     public boolean isNew() {

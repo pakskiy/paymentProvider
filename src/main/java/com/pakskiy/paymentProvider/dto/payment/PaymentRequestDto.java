@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Data
 public class PaymentRequestDto {
@@ -29,10 +29,10 @@ public class PaymentRequestDto {
     private String providerTransactionId;
     @NotNull
     @JsonProperty("createdAt")
-    private LocalDateTime createdAt;
+    private Date createdAt;
     @NotNull
     @JsonProperty("updatedAt")
-    private LocalDateTime updatedAt;
+    private Date updatedAt;
     @NotNull
     @JsonProperty("card_data")
     private TransactionCardDataDto cardData;

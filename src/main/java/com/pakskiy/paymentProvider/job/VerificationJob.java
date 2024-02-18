@@ -27,7 +27,7 @@ public class VerificationJob {
 
     @PostConstruct
     public void init() {
-        clearing();
+        //clearing();
         checking();
     }
 

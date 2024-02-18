@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -25,7 +26,18 @@ public class AccountService {
     private final MerchantService merchantService;
 
     public Mono<AccountEntity> getByMerchantId(Long id) {
-        return accountRepository.findByMerchantId(id);
+        return accountRepository.findByMerchantId(id)
+                .doOnError(error -> log.error("Error occurred while finding entity with ID: {}", id, error))
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("Entity with ID {} not found", id);
+                    return Mono.empty();
+                }))
+                .map
+                        (account -> {
+                            log.info("account {}", account);
+                            return account;
+                        });
+//        return accountRepository.findByMerchantId(id);
     }
 
     @SneakyThrows
@@ -77,6 +89,21 @@ public class AccountService {
                         log.warn("ERR_UPDATE_COMMON {}", ex.getMessage(), ex);
                         return Mono.just(AccountGetResponseDto.builder()
                                 .errorCode("-1008").build());
+                    }
+                });
+    }
+
+    public Mono<AccountEntity> update(AccountEntity account) {
+        return accountRepository.save(account);
+    }
+
+    public Flux<AccountEntity> list() {
+        return accountRepository.findAll()
+                .collectList().flatMapMany(account -> {
+                    if (account.isEmpty()) {
+                        return Flux.empty();
+                    } else {
+                        return Flux.fromIterable(account);
                     }
                 });
     }

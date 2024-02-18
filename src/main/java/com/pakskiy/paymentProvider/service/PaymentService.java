@@ -19,8 +19,11 @@ import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
+import static com.pakskiy.paymentProvider.dto.TransactionStatus.COMPLETED;
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.IN_PROGRESS;
 import static com.pakskiy.paymentProvider.dto.TransactionType.IN;
@@ -71,8 +74,8 @@ public class PaymentService {
                 .method(request.getPaymentMethod())
                 .amount(request.getAmount())
                 .currencyId(request.getCurrency().toUpperCase())
-                .createdAt(request.getCreatedAt())
-                .updatedAt(request.getUpdatedAt())
+                .createdAt(LocalDateTime.ofInstant(request.getCreatedAt().toInstant(), ZoneId.systemDefault()))
+                .updatedAt(LocalDateTime.ofInstant(request.getUpdatedAt().toInstant(), ZoneId.systemDefault()))
                 .cardData(cardData)//here need parse card data
                 .languageId(request.getLanguage().toUpperCase())
                 .notificationUrl(request.getNotificationUrl())
@@ -110,7 +113,7 @@ public class PaymentService {
 //        paymentRepository.findAllById
         return Flux.just(PaymentResponseDto.builder().status(FAILED).message("PAYMENT_METHOD_NOT_ALLOWED").build());
     }
-    
+
 
     public Publisher<Void> check() {
         return paymentRepository.findAllByStatusEqualsOrderByCreatedAtAsc(IN_PROGRESS)
@@ -119,80 +122,23 @@ public class PaymentService {
                 .runOn(Schedulers.parallel()).flatMap(this::checkTransaction).then();
     }
 
-    private Mono<Void> checkTransaction(GroupedFlux<Long, TransactionEntity> el) {
-        return el.map(transactionEntity -> {
-            log.info("Transaction data {}", transactionEntity);
-
-            accountService.getByMerchantId(transactionEntity.getMerchantId()).switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
-                    .mapNotNull(entity -> {
-                        if (entity.getDepositAmount() <= transactionEntity.getAmount()) {
-                            entity.setDepositAmount(entity.getDepositAmount() - transactionEntity.getAmount());
-                            return entity;
-                        }
-                        return null;
-                    }).onErrorResume(ex -> {
-                        log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
-                        return Mono.empty();
-                    }).flatMap(account -> paymentRepository.save(account));
-
-
-            account.map(acc -> {
-                if (acc != null) {
-                    return paymentRepository.save(account);
-                }
-            });
-
-            if (account != null) {
-                return paymentRepository.save(account);
-            }
-
-
-            if (account.getDepositAmount() <= transactionEntity.getAmount()) {
-                account.setDepositAmount(account.getDepositAmount() - transactionEntity.getAmount());
-                paymentRepository.save(account);
-                return account;
-            }
-            ;
-
-                        .flatMap(account -> {
-                if (account.getDepositAmount() <= transactionEntity.getAmount()) {
-                    account.setDepositAmount(account.getDepositAmount() - transactionEntity.getAmount());
-                    paymentRepository.save(account);
-                    return account;
-                }
-                ;
-            });
-            return Mono.empty().then();
-        });
-        return Mono.empty().then();
-
-
-        map(transactionEntity -> {
-            log.info("Transaction data {}", transactionEntity);
-
-            accountService.getByMerchantId(transactionEntity.getMerchantId())
-                    .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
-                    .flatMap(account -> account.getDepositAmount()).flatMap()
-            if (account.getDepositAmount() <= transactionEntity.getAmount()) {
-                account.setDepositAmount(account.getDepositAmount() - transactionEntity.getAmount());
-                return paymentRepository.save(account);
-            }
-            return account;
-        })
-    }).
-
-    then();
-
-//            return accountEntity.flatMap(account -> {
-//                if(account.getDepositAmount() <= transactionEntity.getAmount()) {
-//                    account.setDepositAmount(account.getDepositAmount() -transactionEntity.getAmount());
-//                    paymentRepository.save(account).then();
-//                }
-//                return accountEntity;
-//            });
-//
-//            paymentRepository.save()
-//
-//            return transactionEntity;
-}
+    private Publisher<Void> checkTransaction(GroupedFlux<Long, TransactionEntity> el) {
+        el.flatMap(transactionEntity -> accountService.getByMerchantId(transactionEntity.getMerchantId())
+//                .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
+//                .doOnSuccess((x) -> log.info("Transaction data {}", transactionEntity))
+                .map(entity -> {
+                    log.info("entity {}", entity);
+                    if (entity.getDepositAmount() + entity.getLimitAmount() <= transactionEntity.getAmount()) {
+                        entity.setDepositAmount(entity.getDepositAmount() - transactionEntity.getAmount());
+                        transactionEntity.setStatus(COMPLETED);
+                        return accountService.update(entity);
+                    }
+                    return null;
+                }).onErrorResume(ex -> {
+                    log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
+                    transactionEntity.setStatus(FAILED);
+                    return Mono.empty();
+                }).then(paymentRepository.save(transactionEntity)));
+        return Mono.empty();
+    }
 }
