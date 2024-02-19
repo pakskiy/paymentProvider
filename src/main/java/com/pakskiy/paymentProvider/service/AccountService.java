@@ -31,13 +31,10 @@ public class AccountService {
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Entity with ID {} not found", id);
                     return Mono.empty();
-                }))
-                .map
-                        (account -> {
-                            log.info("account {}", account);
-                            return account;
-                        });
-//        return accountRepository.findByMerchantId(id);
+                })).map(account -> {
+                    log.info("account {}", account);
+                    return account;
+                });
     }
 
     @SneakyThrows

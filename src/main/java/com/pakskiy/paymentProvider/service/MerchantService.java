@@ -13,6 +13,7 @@ import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -107,4 +108,14 @@ public class MerchantService {
     }
 
 
+    public Flux<MerchantEntity> list() {
+        return merchantRepository.findAll()
+                .collectList().flatMapMany(merchant -> {
+                    if (merchant.isEmpty()) {
+                        return Flux.empty();
+                    } else {
+                        return Flux.fromIterable(merchant);
+                    }
+                });
+    }
 }

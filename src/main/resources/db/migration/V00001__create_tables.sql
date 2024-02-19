@@ -11,6 +11,7 @@ CREATE TABLE countries (
     PRIMARY KEY (id)
 );
 
+-- Each merchant can have one or more accounts
 CREATE TABLE merchants
 (
     id bigint NOT NULL DEFAULT nextval('id_merchant_seq'),
@@ -52,12 +53,13 @@ CREATE TABLE languages (
     PRIMARY KEY (id)
 );
 
+-- Each transaction link with one account by id
 CREATE TABLE transactions
 (
     id bigint NOT NULL DEFAULT nextval('id_transaction_seq'),
     method varchar(10) NOT NULL,
     amount bigint NOT NULL,
-    merchant_id bigint NOT NULL,
+    account_id bigint NOT NULL,
     currency_id varchar(3) NOT NULL,
     provider_transaction_id varchar(100) NOT NULL,
     card_data varchar(2000) NOT NULL,
@@ -71,7 +73,7 @@ CREATE TABLE transactions
     PRIMARY KEY (id),
     CONSTRAINT fk_languages_transactions FOREIGN KEY (language_id) REFERENCES languages (id),
     CONSTRAINT fk_currencies_transactions FOREIGN KEY (currency_id) REFERENCES currencies (id),
-    CONSTRAINT fk_merchants_transactions FOREIGN KEY (merchant_id) REFERENCES merchants (id)
+    CONSTRAINT fk_accounts_transactions FOREIGN KEY (account_id) REFERENCES accounts (id)
 );
 
 CREATE TABLE notifications (

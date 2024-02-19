@@ -5,15 +5,21 @@ import com.pakskiy.paymentProvider.dto.merchant.MerchantCreateResponseDto;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantGetResponseDto;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantUpdateRequestDto;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantUpdateResponseDto;
+import com.pakskiy.paymentProvider.entity.AccountEntity;
+import com.pakskiy.paymentProvider.entity.MerchantEntity;
 import com.pakskiy.paymentProvider.service.MerchantService;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -38,5 +44,10 @@ public class MerchantRestControllerV1 {
     public Mono<ResponseEntity<MerchantGetResponseDto>> get(@PathVariable Long id) {
         return merchantService.get(id)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
+    }
+
+    @GetMapping(value = "/list")
+    public Flux<MerchantEntity> list(@RequestHeader("Authorization") @NotNull @NotEmpty String token) {
+        return merchantService.list();
     }
 }

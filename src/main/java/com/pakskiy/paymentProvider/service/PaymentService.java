@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -38,7 +39,6 @@ public class PaymentService {
     private final ObjectMapper objectMapper;
 
     public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
-
         return validate(request).then(Mono.defer(() -> {
             Mono<Long> transactionId = merchantService.getByToken(token)
                     .map(MerchantEntity::getId)
@@ -61,12 +61,12 @@ public class PaymentService {
     }
 
     @SneakyThrows
-    private TransactionEntity getTransactionEntity(PaymentRequestDto request, Long merchantId) {
+    private TransactionEntity getTransactionEntity(PaymentRequestDto request, Long accountId) {
         String customerData = objectMapper.writeValueAsString(request.getCustomer());
         String cardData = objectMapper.writeValueAsString(request.getCardData());
 
         return TransactionEntity.builder()
-                .accountId(merchantId)
+                .accountId(accountId)
                 .providerTransactionId(request.getProviderTransactionId())
                 .method(request.getPaymentMethod())
                 .amount(request.getAmount())
@@ -117,27 +117,28 @@ public class PaymentService {
                 .collectSortedList()
                 .flatMap(transactionList -> {
                     log.info("transactionList {}", transactionList);
-                    transactionList.forEach(t -> checkTransaction(t));
+                    transactionList.forEach(t -> checkTransaction(t).subscribe());
                     return Mono.empty();
                 });
     }
 
     private Mono<Void> checkTransaction(TransactionEntity el) {
         return accountService.getById(el.getAccountId())
-                .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
-                .doOnSuccess((x) -> log.info("Transaction data {}", el))
-                .flatMap(entity -> {
+                .publishOn(Schedulers.boundedElastic())
+                .map(entity -> {
                     log.info("entity {}", entity);
-                    if (entity.getDepositAmount() + entity.getLimitAmount() <= el.getAmount()) {
+                    if (entity.getDepositAmount() + entity.getLimitAmount() >= el.getAmount()) {
                         entity.setDepositAmount(entity.getDepositAmount() - el.getAmount());
                         el.setStatus(COMPLETED);
-                        return accountService.update(entity);
+                        return accountService.update(entity).subscribe();
                     }
-                    return Mono.empty();
+                    return Mono.never().subscribe();
                 }).onErrorResume(ex -> {
                     log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
                     el.setStatus(FAILED);
                     return Mono.empty();
-                }).flatMap(one -> paymentRepository.save(el)).then();
+                }).flatMap(one ->
+                        paymentRepository.save(el))
+                .then();
     }
 }
