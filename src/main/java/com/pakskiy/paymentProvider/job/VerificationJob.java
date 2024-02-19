@@ -6,8 +6,10 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
@@ -30,16 +32,16 @@ public class VerificationJob {
         //clearing();
         checking();
     }
-
-    private void clearing(){
-        Flux.interval(Duration.ofSeconds(3), Duration.ofSeconds(CLEARING_STEP))
-                .publishOn(Schedulers.newSingle("clearing-thread"))
-                .flatMap(tick -> clearingService.clear())
-                .subscribe(
-                        it -> log.info("Scheduled clearing task executed at: {} ", java.time.LocalTime.now()),
-                        error -> log.error("TIMER IS SHUTDOWN BECAUSE SEVERE ERROR ", error)
-                );
-    }
+//
+//    private void clearing(){
+//        Flux.interval(Duration.ofSeconds(3), Duration.ofSeconds(CLEARING_STEP))
+//                .publishOn(Schedulers.newSingle("clearing-thread"))
+//                .flatMap(tick -> clearingService.clear())
+//                .subscribe(
+//                        it -> log.info("Scheduled clearing task executed at: {} ", java.time.LocalTime.now()),
+//                        error -> log.error("TIMER IS SHUTDOWN BECAUSE SEVERE ERROR ", error)
+//                );
+//    }
     private void checking(){
         Flux.interval(Duration.ofSeconds(5), Duration.ofSeconds(TRANSACTION_STEP))
                 .publishOn(Schedulers.newSingle("checking-thread"))
@@ -49,4 +51,9 @@ public class VerificationJob {
                         error -> log.error("TIMER IS SHUTDOWN BECAUSE SEVERE ERROR ", error)
                 );
     }
+
+//    @Scheduled(initialDelay=5000, fixedRate=5000)
+//    public Mono<Void> checkJob(){
+//        return Mono.fromCallable(paymentService::check).then();
+//    }
 }

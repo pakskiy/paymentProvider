@@ -12,12 +12,9 @@ import com.pakskiy.paymentProvider.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -46,7 +43,7 @@ public class PaymentService {
             Mono<Long> transactionId = merchantService.getByToken(token)
                     .map(MerchantEntity::getId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
-                    .flatMap(accountService::getByMerchantId)
+                    .flatMap(accountService::getById)
                     .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
                     .flatMap(account -> paymentRepository.save(getTransactionEntity(request, account.getMerchantId())))
                     .map(transactionEntity -> Optional.ofNullable(transactionEntity.getId()).orElse(0L));
@@ -69,7 +66,7 @@ public class PaymentService {
         String cardData = objectMapper.writeValueAsString(request.getCardData());
 
         return TransactionEntity.builder()
-                .merchantId(merchantId)
+                .accountId(merchantId)
                 .providerTransactionId(request.getProviderTransactionId())
                 .method(request.getPaymentMethod())
                 .amount(request.getAmount())
@@ -115,30 +112,32 @@ public class PaymentService {
     }
 
 
-    public Publisher<Void> check() {
+    public Mono<Void> check() {
         return paymentRepository.findAllByStatusEqualsOrderByCreatedAtAsc(IN_PROGRESS)
-                .groupBy(TransactionEntity::getMerchantId)
-                .parallel()
-                .runOn(Schedulers.parallel()).flatMap(this::checkTransaction).then();
+                .collectSortedList()
+                .flatMap(transactionList -> {
+                    log.info("transactionList {}", transactionList);
+                    transactionList.forEach(t -> checkTransaction(t));
+                    return Mono.empty();
+                });
     }
 
-    private Publisher<Void> checkTransaction(GroupedFlux<Long, TransactionEntity> el) {
-        el.flatMap(transactionEntity -> accountService.getByMerchantId(transactionEntity.getMerchantId())
-//                .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
-//                .doOnSuccess((x) -> log.info("Transaction data {}", transactionEntity))
-                .map(entity -> {
+    private Mono<Void> checkTransaction(TransactionEntity el) {
+        return accountService.getById(el.getAccountId())
+                .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
+                .doOnSuccess((x) -> log.info("Transaction data {}", el))
+                .flatMap(entity -> {
                     log.info("entity {}", entity);
-                    if (entity.getDepositAmount() + entity.getLimitAmount() <= transactionEntity.getAmount()) {
-                        entity.setDepositAmount(entity.getDepositAmount() - transactionEntity.getAmount());
-                        transactionEntity.setStatus(COMPLETED);
+                    if (entity.getDepositAmount() + entity.getLimitAmount() <= el.getAmount()) {
+                        entity.setDepositAmount(entity.getDepositAmount() - el.getAmount());
+                        el.setStatus(COMPLETED);
                         return accountService.update(entity);
                     }
-                    return null;
+                    return Mono.empty();
                 }).onErrorResume(ex -> {
                     log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
-                    transactionEntity.setStatus(FAILED);
+                    el.setStatus(FAILED);
                     return Mono.empty();
-                }).then(paymentRepository.save(transactionEntity)));
-        return Mono.empty();
+                }).flatMap(one -> paymentRepository.save(el)).then();
     }
 }

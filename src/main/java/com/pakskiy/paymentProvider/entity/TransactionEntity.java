@@ -21,7 +21,7 @@ public final class TransactionEntity implements Persistable<Long> {
     @Column(value = "id") private Long id;
     @Column(value = "amount") private Long amount;
     @Column(value = "method") private String method;
-    @Column(value = "merchant_id") private Long merchantId;
+    @Column(value = "account_id") private Long accountId;
     @Column(value = "currency_id") private String currencyId;
     @Column(value = "provider_transaction_id") private String providerTransactionId;
     @Column(value = "card_data") private String cardData;

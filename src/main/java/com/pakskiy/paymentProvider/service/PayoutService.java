@@ -41,7 +41,7 @@ public class PayoutService {
             Mono<Long> transactionId = merchantService.getByToken(token)
                     .map(MerchantEntity::getId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
-                    .flatMap(accountService::getByMerchantId)
+                    .flatMap(accountService::getById)
                     .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
                     .flatMap(account -> paymentRepository.save(getTransactionEntity(request, account.getMerchantId())))
                     .map(transactionEntity -> Optional.ofNullable(transactionEntity.getId()).orElse(0L));
@@ -88,7 +88,7 @@ public class PayoutService {
         String cardData = objectMapper.writeValueAsString(request.getCardData());
 
         return TransactionEntity.builder()
-                .merchantId(merchantId)
+                .accountId(merchantId)
                 .providerTransactionId(request.getProviderTransactionId())
                 .method(request.getPaymentMethod())
                 .amount(-request.getAmount())

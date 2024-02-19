@@ -25,8 +25,8 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final MerchantService merchantService;
 
-    public Mono<AccountEntity> getByMerchantId(Long id) {
-        return accountRepository.findByMerchantId(id)
+    public Mono<AccountEntity> getById(Long id) {
+        return accountRepository.findById(id)
                 .doOnError(error -> log.error("Error occurred while finding entity with ID: {}", id, error))
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Entity with ID {} not found", id);
