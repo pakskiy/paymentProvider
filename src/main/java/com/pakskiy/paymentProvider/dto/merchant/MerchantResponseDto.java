@@ -1,4 +1,4 @@
-package com.pakskiy.paymentProvider.dto.account;
+package com.pakskiy.paymentProvider.dto.merchant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -6,21 +6,19 @@ import lombok.Data;
 
 @Data
 @Builder
-public class AccountResponseDto {
+public class MerchantResponseDto {
     @JsonProperty("id")
     private Long id;
-    @JsonProperty("merchant_id")
-    private Long merchantId;
-    @JsonProperty("deposit_amount")
-    private Long depositAmount;
-    @JsonProperty("limit_amount")
-    private Long limitAmount;
-    @JsonProperty("is_overdraft")
-    private int isOverdraft;
+    @JsonProperty("login")
+    private String login;
+    @JsonProperty("key")
+    private String key;
     @JsonProperty("created_at")
     private String createdAt;
     @JsonProperty("updated_at")
     private String updatedAt;
+    @JsonProperty("status")
+    private String status;
     @JsonProperty("error_code")
     private String errorCode;
 }

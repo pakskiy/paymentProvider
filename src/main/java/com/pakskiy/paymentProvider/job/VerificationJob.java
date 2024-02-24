@@ -46,7 +46,7 @@ public class VerificationJob {
 //    }
     private void checking(){
         Flux.interval(Duration.ofSeconds(3), Duration.ofSeconds(TRANSACTION_STEP))
-                .publishOn(Schedulers.newSingle("timer-for-transaction-thread"))
+                .publishOn(Schedulers.newSingle("trx-checking-thread"))
                 .flatMap(i -> {
                     LocalDateTime now = LocalDateTime.now();
                     return paymentService.check().then(Mono.just(now))
@@ -63,24 +63,5 @@ public class VerificationJob {
                 .subscribe(
                         it -> log.info("TIMER TICK AT {} END AT {}", it, LocalDateTime.now()),
                         error -> log.error("TIMER IS SHUTDOWN BECAUSE SEVERE ERROR ", error));
-
-
-//        Flux.interval(Duration.ofSeconds(5), Duration.ofSeconds(TRANSACTION_STEP))
-//                .publishOn(Schedulers.newSingle("checking-thread"))
-//                .flatMap(tick -> runme())
-//                .subscribe(
-//                        it -> log.info("Scheduled checking task executed at: {} ", java.time.LocalTime.now()),
-//                        error -> log.error("TIMER IS SHUTDOWN BECAUSE SEVERE ERROR ", error)
-//                );
     }
-
-    private Publisher<?> runme() {
-        System.out.println("asdasd");
-        return Mono.empty();
-    }
-
-//    @Scheduled(initialDelay=5000, fixedRate=5000)
-//    public Mono<Void> checkJob(){
-//        return Mono.fromCallable(paymentService::check).then();
-//    }
 }

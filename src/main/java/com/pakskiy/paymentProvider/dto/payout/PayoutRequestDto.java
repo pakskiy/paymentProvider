@@ -1,14 +1,13 @@
 package com.pakskiy.paymentProvider.dto.payout;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.pakskiy.paymentProvider.dto.TransactionCardDataDto;
-import com.pakskiy.paymentProvider.dto.TransactionCustomerDto;
+import com.pakskiy.paymentProvider.dto.CardDataDto;
+import com.pakskiy.paymentProvider.dto.CustomerDto;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 @Builder
@@ -29,13 +28,13 @@ public class PayoutRequestDto {
     @JsonProperty("updatedAt")
     private LocalDateTime updatedAt;
     @JsonProperty("card_data")
-    private TransactionCardDataDto cardData;
+    private CardDataDto cardData;
     @JsonProperty("language")
     private String language;
     @JsonProperty("notification_url")
     private String notificationUrl;
     @JsonProperty("customer")
-    private TransactionCustomerDto customer;
+    private CustomerDto customer;
     @JsonProperty("message")
     private String message;
     @JsonProperty("status")

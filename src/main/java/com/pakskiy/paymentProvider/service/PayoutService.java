@@ -38,7 +38,7 @@ public class PayoutService {
     @Transactional
     public Mono<PayoutResponseDto> create(PayoutRequestDto request, String token) {
         return check(request).then(Mono.defer(() -> {
-            Mono<Long> transactionId = merchantService.getByToken(token)
+            Mono<Long> transactionId = merchantService.findByToken(token)
                     .map(MerchantEntity::getId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
                     .flatMap(accountService::getById)

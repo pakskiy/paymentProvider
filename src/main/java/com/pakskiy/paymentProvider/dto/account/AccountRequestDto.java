@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class AccountCreateRequestDto {
+public class AccountRequestDto {
     @JsonProperty("deposit_amount")
     private long depositAmount;
     @JsonProperty("limit_amount")

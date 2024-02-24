@@ -1,8 +1,7 @@
 package com.pakskiy.paymentProvider.rest;
 
-import com.pakskiy.paymentProvider.dto.account.AccountCreateRequestDto;
-import com.pakskiy.paymentProvider.dto.account.AccountCreateResponseDto;
-import com.pakskiy.paymentProvider.dto.account.AccountGetResponseDto;
+import com.pakskiy.paymentProvider.dto.account.AccountRequestDto;
+import com.pakskiy.paymentProvider.dto.account.AccountResponseDto;
 import com.pakskiy.paymentProvider.entity.AccountEntity;
 import com.pakskiy.paymentProvider.service.AccountService;
 import jakarta.validation.constraints.NotEmpty;
@@ -25,14 +24,14 @@ public class AccountRestControllerV1 {
     private final AccountService accountService;
 
     @PostMapping(value = "/create")
-    public Mono<ResponseEntity<AccountCreateResponseDto>> create(@RequestHeader("Authorization") @NotNull @NotEmpty String token,
-                                                                 @RequestBody AccountCreateRequestDto request) {
+    public Mono<ResponseEntity<AccountResponseDto>> create(@RequestHeader("Authorization") @NotNull @NotEmpty String token,
+                                                           @RequestBody AccountRequestDto request) {
         return accountService.create(request, token)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
 
     @GetMapping(value = "/get")
-    public Mono<ResponseEntity<AccountGetResponseDto>> get(@RequestHeader("Authorization") @NotNull @NotEmpty String token) {
+    public Mono<ResponseEntity<AccountResponseDto>> get(@RequestHeader("Authorization") @NotNull @NotEmpty String token) {
         return accountService.get(token)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }

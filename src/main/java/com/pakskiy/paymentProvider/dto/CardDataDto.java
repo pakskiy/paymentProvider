@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TransactionCardDataDto {
+public class CardDataDto {
     @NotNull
     @NotEmpty
     @JsonProperty("card_number")

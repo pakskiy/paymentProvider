@@ -40,7 +40,7 @@ public class PaymentService {
 
     public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
         return validate(request).then(Mono.defer(() -> {
-            Mono<Long> transactionId = merchantService.getByToken(token)
+            Mono<Long> transactionId = merchantService.findByToken(token)
                     .map(MerchantEntity::getId)
                     .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
                     .flatMap(accountService::getById)
@@ -117,7 +117,7 @@ public class PaymentService {
                 .collectSortedList()
                 .flatMap(transactionList -> {
                     log.info("transactionList {}", transactionList);
-                    transactionList.forEach(t -> checkTransaction(t).subscribe());
+                    transactionList.stream().parallel().forEach(t -> checkTransaction(t).subscribe());
                     return Mono.empty();
                 });
     }
@@ -127,12 +127,18 @@ public class PaymentService {
                 .publishOn(Schedulers.boundedElastic())
                 .map(entity -> {
                     log.info("entity {}", entity);
-                    if (entity.getDepositAmount() + entity.getLimitAmount() >= el.getAmount()) {
-                        entity.setDepositAmount(entity.getDepositAmount() - el.getAmount());
-                        el.setStatus(COMPLETED);
-                        return accountService.update(entity).subscribe();
+                    if (el.getType() == IN) {
+                        entity.setDepositAmount(entity.getDepositAmount() + el.getAmount());
+                    } else {
+                        if (entity.getDepositAmount() + entity.getLimitAmount() >= el.getAmount()) {
+                            entity.setDepositAmount(entity.getDepositAmount() - el.getAmount());
+                        } else {
+                            return Mono.error(new RuntimeException("Not enough deposit amount")).subscribe();
+                        }
                     }
-                    return Mono.never().subscribe();
+                    el.setStatus(COMPLETED);
+                    return accountService.update(entity).subscribe();
+                    //return Mono.never().subscribe();
                 }).onErrorResume(ex -> {
                     log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
                     el.setStatus(FAILED);

@@ -1,8 +1,8 @@
 package com.pakskiy.paymentProvider.dto.payment;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.pakskiy.paymentProvider.dto.TransactionCardDataDto;
-import com.pakskiy.paymentProvider.dto.TransactionCustomerDto;
+import com.pakskiy.paymentProvider.dto.CardDataDto;
+import com.pakskiy.paymentProvider.dto.CustomerDto;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -35,7 +35,7 @@ public class PaymentRequestDto {
     private Date updatedAt;
     @NotNull
     @JsonProperty("card_data")
-    private TransactionCardDataDto cardData;
+    private CardDataDto cardData;
     @NotNull
     @NotEmpty
     @JsonProperty("language")
@@ -46,5 +46,5 @@ public class PaymentRequestDto {
     private String notificationUrl;
     @NotNull
     @JsonProperty("customer")
-    private TransactionCustomerDto customer;
+    private CustomerDto customer;
 }

@@ -1,11 +1,7 @@
 package com.pakskiy.paymentProvider.rest;
 
-import com.pakskiy.paymentProvider.dto.merchant.MerchantCreateRequestDto;
-import com.pakskiy.paymentProvider.dto.merchant.MerchantCreateResponseDto;
-import com.pakskiy.paymentProvider.dto.merchant.MerchantGetResponseDto;
-import com.pakskiy.paymentProvider.dto.merchant.MerchantUpdateRequestDto;
-import com.pakskiy.paymentProvider.dto.merchant.MerchantUpdateResponseDto;
-import com.pakskiy.paymentProvider.entity.AccountEntity;
+import com.pakskiy.paymentProvider.dto.merchant.MerchantRequestDto;
+import com.pakskiy.paymentProvider.dto.merchant.MerchantResponseDto;
 import com.pakskiy.paymentProvider.entity.MerchantEntity;
 import com.pakskiy.paymentProvider.service.MerchantService;
 import jakarta.validation.constraints.NotEmpty;
@@ -29,19 +25,19 @@ public class MerchantRestControllerV1 {
     private final MerchantService merchantService;
 
     @PostMapping(value = "/create")
-    public Mono<ResponseEntity<MerchantCreateResponseDto>> create(@RequestBody MerchantCreateRequestDto merchantCreateRequestDto) {
-        return merchantService.create(merchantCreateRequestDto)
+    public Mono<ResponseEntity<MerchantResponseDto>> create(@RequestBody MerchantRequestDto merchantRequestDto) {
+        return merchantService.create(merchantRequestDto)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
 
     @PostMapping(value = "/update")
-    public Mono<ResponseEntity<MerchantUpdateResponseDto>> update(@RequestBody MerchantUpdateRequestDto merchantUpdateRequestDto) {
-        return merchantService.update(merchantUpdateRequestDto)
+    public Mono<ResponseEntity<MerchantResponseDto>> update(@RequestBody MerchantRequestDto merchantRequestDto) {
+        return merchantService.update(merchantRequestDto)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
 
     @GetMapping(value = "/get/{id}")
-    public Mono<ResponseEntity<MerchantGetResponseDto>> get(@PathVariable Long id) {
+    public Mono<ResponseEntity<MerchantResponseDto>> get(@PathVariable Long id) {
         return merchantService.get(id)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
