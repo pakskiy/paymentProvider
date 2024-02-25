@@ -3,11 +3,13 @@ package com.pakskiy.paymentProvider.rest;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantResponseDto;
 import com.pakskiy.paymentProvider.dto.payment.PaymentRequestDto;
 import com.pakskiy.paymentProvider.dto.payment.PaymentResponseDto;
+import com.pakskiy.paymentProvider.entity.TransactionEntity;
 import com.pakskiy.paymentProvider.service.PaymentService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,7 +19,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
 
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
 
@@ -35,21 +40,13 @@ public class PaymentRestControllerV1 {
     }
 
     @GetMapping(value = "/list")
-    public Flux<MerchantResponseDto>> get(@RequestParam String start_date, @RequestParam String end_date) {
-        return paymentService.list(start_date, end_date)
-                .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
+    public Flux<TransactionEntity> list(@RequestParam("start_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime startDate,
+                                       @RequestParam("end_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime endDate) {
+        return paymentService.list(startDate, endDate);
     }
 
-//    @PostMapping(value = "/payment")
-//    public Mono<PaymentResponseDto> create(@RequestBody PaymentRequestDto paymentTransactionDto) {
-//        return paymentService.create(paymentTransactionDto).flatMap(result -> {
-//            if (result.getStatus() == APPROVED) {
-//                return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-//                        .body(BodyInserters.fromValue(result), PaymentResponseDto.class);
-//            } else {
-//                return ResponseEntity.badRequest().body(result);
-//            }
-//        });
-//    }
+    @GetMapping(value = "/transaction/{transactionId}/details")
+    public Mono<TransactionEntity> get(@PathVariable Long transactionId) {
+        return paymentService.get(transactionId);
+    }
 }
-

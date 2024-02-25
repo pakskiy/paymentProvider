@@ -12,8 +12,7 @@ import java.util.Date;
 
 @Repository
 public interface PaymentRepository extends ReactiveCrudRepository<TransactionEntity, Long> {
-
-    Flux<TransactionEntity> findAllByCreatedAtBetween(Date starDate, Date endDate);
     Flux<TransactionEntity> findAllByOrderByCreatedAt();
     Flux<TransactionEntity> findAllByStatusEqualsOrderByCreatedAtAsc(TransactionStatus status);
+    Flux<TransactionEntity> findAllByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime startDate, LocalDateTime endDate);
 }

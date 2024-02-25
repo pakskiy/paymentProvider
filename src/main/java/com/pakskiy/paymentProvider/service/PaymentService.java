@@ -147,4 +147,13 @@ public class PaymentService {
                         paymentRepository.save(el))
                 .then();
     }
+
+
+    public Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate) {
+        return paymentRepository.findAllByCreatedAtBetweenOrderByCreatedAtDesc(startDate, endDate);
+    }
+
+    public Mono<TransactionEntity> get(Long transactionId) {
+        return paymentRepository.findById(transactionId);
+    }
 }
