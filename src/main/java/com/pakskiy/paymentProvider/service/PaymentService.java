@@ -138,13 +138,13 @@ public class PaymentService {
                     }
                     el.setStatus(COMPLETED);
                     return accountService.update(entity).subscribe();
-                    //return Mono.never().subscribe();
-                }).onErrorResume(ex -> {
+                })
+                .onErrorResume(ex -> {
                     log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
                     el.setStatus(FAILED);
                     return Mono.empty();
-                }).flatMap(one ->
-                        paymentRepository.save(el))
+                })
+                .flatMap(one -> paymentRepository.save(el))
                 .then();
     }
 

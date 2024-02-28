@@ -1,5 +1,10 @@
 package com.pakskiy.paymentProvider.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.pakskiy.paymentProvider.dto.TransactionStatus;
 import com.pakskiy.paymentProvider.dto.TransactionType;
 import lombok.Builder;
@@ -39,8 +44,14 @@ public final class TransactionEntity implements Persistable<Long> {
     @Column(value = "type")
     private TransactionType type; //IN-payment or OUT-payout
     @Column(value = "created_at")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING)
     private LocalDateTime createdAt;
     @Column(value = "updated_at")
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING)
     private LocalDateTime updatedAt;
     //    @Column(value = "status") private String status;
     @Column(value = "status")

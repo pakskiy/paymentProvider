@@ -59,24 +59,24 @@ public class PayoutService {
     }
 
     private Mono<Void> check(PayoutRequestDto payoutRequestDto) {
-        return checkCountry(payoutRequestDto.getCustomer().getCountry().toUpperCase())
-                .then(checkCurrency(payoutRequestDto.getCurrency().toUpperCase()))
-                .then(checkLanguage(payoutRequestDto.getLanguage().toUpperCase()));
+        return validateCountry(payoutRequestDto.getCustomer().getCountry().toUpperCase())
+                .then(validateCurrency(payoutRequestDto.getCurrency().toUpperCase()))
+                .then(validateLanguage(payoutRequestDto.getLanguage().toUpperCase()));
     }
 
-    private Mono<Void> checkCountry(String id) {
+    private Mono<Void> validateCountry(String id) {
         return countryRepository.findById(id)
                 .switchIfEmpty(Mono.error(new RuntimeException("Resource country not found")))
                 .then();
     }
 
-    private Mono<Void> checkCurrency(String id) {
+    private Mono<Void> validateCurrency(String id) {
         return currencyRepository.findById(id)
                 .switchIfEmpty(Mono.error(new RuntimeException("Resource currency not found")))
                 .then();
     }
 
-    private Mono<Void> checkLanguage(String id) {
+    private Mono<Void> validateLanguage(String id) {
         return languageRepository.findById(id)
                 .switchIfEmpty(Mono.error(new RuntimeException("Resource language not found")))
                 .then();
