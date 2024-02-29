@@ -18,7 +18,7 @@ spring:
     url: jdbc:postgresql://localhost:55432/paymentdb
     locations: classpath:db/migration
     user: ${spring.r2dbc.username}
-    password: ${spring.r2dbc.password}
+    password: ${spring.r2dbc.password}sou
 logging:
   level:
     liquibase: INFO
