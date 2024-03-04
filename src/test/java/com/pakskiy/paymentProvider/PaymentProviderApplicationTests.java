@@ -1,6 +1,9 @@
 package com.pakskiy.paymentProvider;
 
+import com.pakskiy.paymentProvider.dto.account.AccountRequestDto;
+import com.pakskiy.paymentProvider.dto.account.AccountResponseDto;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantRequestDto;
+import com.pakskiy.paymentProvider.dto.merchant.MerchantResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,6 +24,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @ActiveProfiles("test")
@@ -28,6 +33,10 @@ import org.testcontainers.utility.DockerImageName;
 @RequiredArgsConstructor
 @AutoConfigureWebTestClient
 class PaymentProviderApplicationTests {
+
+    private static final String authToken = "Basic dGVzdGxvZ2luMDE6c0lUa2h5VW5UU3NQbXVI";
+    private static final String login = "testlogin01";
+    private static final String key = "sITkhyUnTSsPmuH";
 	private static final DockerImageName dockerImageName = DockerImageName.parse("postgres:12.15");
     @Autowired
     private WebTestClient webClient;
@@ -37,15 +46,6 @@ class PaymentProviderApplicationTests {
             .withDatabaseName("paymentProvider")
             .withUsername("postgres")
             .withPassword("123456");
-
-    //    @DynamicPropertySource
-//    static void postgresqlProperties(DynamicPropertyRegistry registry) {
-//        registry.add("spring.r2dbc.url", () -> "r2dbc:tc:postgresql://"
-//                + postgresqlContainer.getHost() + ":56432"
-//                + "/" + postgresqlContainer.getDatabaseName());
-//        registry.add("spring.r2dbc.username", () -> postgresqlContainer.getUsername());
-//        registry.add("spring.r2dbc.password", () -> postgresqlContainer.getPassword());
-//    }
 
     @BeforeAll
     static void beforeAll() {
@@ -59,39 +59,45 @@ class PaymentProviderApplicationTests {
         postgresqlContainer.stop();
     }
 
-
 	@Test
 	void createMerchant() {
         MerchantRequestDto merchantRequestDto = new MerchantRequestDto();
-        merchantRequestDto.setLogin("test1");
-        merchantRequestDto.setKey("test1key");
+        merchantRequestDto.setLogin(login);
+        merchantRequestDto.setKey(key);
 
-        webClient.post()
+        var resultResponse = webClient.post()
                 .uri("/api/v1/merchants/create")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(merchantRequestDto))
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus().isOk()
+                .expectBody(MerchantResponseDto.class).returnResult()
+                .getResponseBody();
+        assert resultResponse != null;
+        assertEquals(resultResponse.getLogin(), login);
+        assertEquals(resultResponse.getKey(), key);
 	}
 
+    @Test
+    void createAccount(){
+        long depositAmount = 10000;
+        long limitAmount = 1000;
+        AccountRequestDto accountRequestDto = new AccountRequestDto();
+        accountRequestDto.setDepositAmount(depositAmount);
+        accountRequestDto.setLimitAmount(limitAmount);
 
-    @ExtendWith(SpringExtension.class)
-    @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-    public class GreetingRouterTest {
-        @Autowired
-        private WebTestClient webTestClient;
+        var resultResponse = webClient.post()
+                .uri("/api/v1/merchants/create")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", authToken)
+                .body(BodyInserters.fromValue(accountRequestDto))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(AccountResponseDto.class).returnResult()
+                .getResponseBody();
 
-        @Test
-        public void testHello() {
-            webTestClient
-                    .get()
-                    .uri("/hello")
-                    .accept(MediaType.TEXT_PLAIN)
-                    .exchange()
-                    .expectStatus()
-                    .isOk()
-                    .expectBody(String.class)
-                    .isEqualTo("Hello, Spring");
-        }
+        assert resultResponse != null;
+        assertEquals(resultResponse.getDepositAmount(), depositAmount);
+        assertEquals(resultResponse.getLimitAmount(), limitAmount);
     }
 }
