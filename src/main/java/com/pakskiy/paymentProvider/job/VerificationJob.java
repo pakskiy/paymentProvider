@@ -34,8 +34,8 @@ public class VerificationJob {
         //clearing();
         checking();
     }
-//
-//    private void clearing(){
+
+//    private void clearing(){ // DO I NEED CHECK TRANSACTIONS IN THIS TASK????
 //        Flux.interval(Duration.ofSeconds(3), Duration.ofSeconds(CLEARING_STEP))
 //                .publishOn(Schedulers.newSingle("clearing-thread"))
 //                .flatMap(tick -> clearingService.clear())
