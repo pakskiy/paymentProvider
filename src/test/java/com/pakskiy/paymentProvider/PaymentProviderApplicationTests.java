@@ -4,13 +4,15 @@ import com.pakskiy.paymentProvider.dto.account.AccountRequestDto;
 import com.pakskiy.paymentProvider.dto.account.AccountResponseDto;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantRequestDto;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantResponseDto;
-import com.pakskiy.paymentProvider.entity.AccountEntity;
 import com.pakskiy.paymentProvider.service.AccountService;
+import com.pakskiy.paymentProvider.service.MerchantService;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -28,8 +30,8 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static reactor.core.publisher.Mono.when;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -37,6 +39,7 @@ import static reactor.core.publisher.Mono.when;
 @Testcontainers
 @RequiredArgsConstructor
 @AutoConfigureWebTestClient
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PaymentProviderApplicationTests {
 
     private static final String authToken = "Basic dGVzdGxvZ2luMDE6c0lUa2h5VW5UU3NQbXVI";
@@ -50,6 +53,9 @@ class PaymentProviderApplicationTests {
 
     @Autowired
     AccountService accountService;
+
+    @Autowired
+    MerchantService merchantService;
 
     private long firstAccountId = 0L;
     private long firstMerchantId = 0L;
@@ -120,18 +126,72 @@ class PaymentProviderApplicationTests {
     }
 
     @Test
-    void test_account_service_get_by_id_success(){
-        MerchantRequestDto newMerchantRequestDto = new MerchantRequestDto();
-        newMerchantRequestDto.setLogin("");
-        when(accountService.get(authToken)).thenReturn(Mono.just(merchantRequestDto));
+    @Order(3)
+    void test_account_service_get_by_id_success() {
+        long depositAmount = 10000;
+        long limitAmount = 1000;
+//        MerchantRequestDto newMerchantRequestDto = new MerchantRequestDto();
+//        newMerchantRequestDto.setLogin("");
+//        when(accountService.get(authToken)).thenReturn(Mono.just(merchantRequestDto));
 
+//        AccountRequestDto account = new AccountRequestDto();
+//        account.setDepositAmount(10000);
+//        account.setLimitAmount(1000);
 
-        Mono<AccountEntity> account = accountService.create()
+        Mono<AccountResponseDto> createdAccount = accountService.get(authToken);
         StepVerifier
-                .create(merchantRequestDto)
-                .consumeNextWith(newUser -> {
-                    assertEquals(newUser.getEmail(), TEST_EMAIL);
-                })
-                .verifyComplete();
+                .create(createdAccount)
+                .consumeNextWith(newAccount -> {
+                    assertEquals(newAccount.getDepositAmount(), depositAmount);
+                    assertEquals(newAccount.getLimitAmount(), limitAmount);
+                }).verifyComplete();
     }
+
+    @Test
+    @Order(4)
+    void test_account_service_get_by_id_fail() {
+        long depositAmount = 10001;
+        long limitAmount = 1001;
+//        MerchantRequestDto newMerchantRequestDto = new MerchantRequestDto();
+//        newMerchantRequestDto.setLogin("");
+//        when(accountService.get(authToken)).thenReturn(Mono.just(merchantRequestDto));
+
+//        AccountRequestDto account = new AccountRequestDto();
+//        account.setDepositAmount(10000);
+//        account.setLimitAmount(1000);
+
+        Mono<AccountResponseDto> createdAccount = accountService.get(authToken);
+        StepVerifier
+                .create(createdAccount)
+                .consumeNextWith(newAccount -> {
+                    assertNotEquals(newAccount.getDepositAmount(), depositAmount);
+                    assertNotEquals(newAccount.getLimitAmount(), limitAmount);
+                }).verifyComplete();
+    }
+
+    @Test
+    @Order(5)
+    void test_merchant_get_success() {
+        Mono<MerchantResponseDto> createdMerchant = merchantService.get(1L);
+        StepVerifier
+                .create(createdMerchant)
+                .consumeNextWith(merchant -> {
+                    assertEquals(merchant.getLogin(), login);
+                    assertEquals(merchant.getKey(), key);
+                }).verifyComplete();
+    }
+
+    @Test
+    @Order(6)
+    void test_merchant_get_fail() {
+        Mono<MerchantResponseDto> createdMerchant = merchantService.get(1L);
+        StepVerifier
+                .create(createdMerchant)
+                .consumeNextWith(merchant -> {
+                    assertNotEquals(merchant.getLogin(), login + "wrong");
+                    assertNotEquals(merchant.getKey(), key + "wrong");
+                }).verifyComplete();
+    }
+
+
 }
