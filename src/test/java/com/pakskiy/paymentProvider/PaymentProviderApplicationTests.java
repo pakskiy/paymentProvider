@@ -4,9 +4,12 @@ import com.pakskiy.paymentProvider.dto.account.AccountRequestDto;
 import com.pakskiy.paymentProvider.dto.account.AccountResponseDto;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantRequestDto;
 import com.pakskiy.paymentProvider.dto.merchant.MerchantResponseDto;
+import com.pakskiy.paymentProvider.entity.AccountEntity;
+import com.pakskiy.paymentProvider.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +24,12 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static reactor.core.publisher.Mono.when;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -39,6 +46,14 @@ class PaymentProviderApplicationTests {
     @Autowired
     private WebTestClient webClient;
 
+    private final static MerchantRequestDto merchantRequestDto = new MerchantRequestDto();
+
+    @Autowired
+    AccountService accountService;
+
+    private long firstAccountId = 0L;
+    private long firstMerchantId = 0L;
+
     @Container
     static PostgreSQLContainer<?> postgresqlContainer = (PostgreSQLContainer) new PostgreSQLContainer(dockerImageName)
             .withDatabaseName("paymentProvider")
@@ -50,6 +65,8 @@ class PaymentProviderApplicationTests {
         postgresqlContainer.start();
         System.setProperty("spring.r2dbc.url", "r2dbc:postgresql://localhost:" + postgresqlContainer.getFirstMappedPort() + "/paymentProvider");
         System.setProperty("spring.flyway.url", "jdbc:postgresql://localhost:" + postgresqlContainer.getFirstMappedPort() + "/paymentProvider");
+        merchantRequestDto.setLogin(login);
+        merchantRequestDto.setKey(key);
     }
 
     @AfterAll
@@ -58,11 +75,8 @@ class PaymentProviderApplicationTests {
     }
 
     @Test
-    void createMerchant() {
-        MerchantRequestDto merchantRequestDto = new MerchantRequestDto();
-        merchantRequestDto.setLogin(login);
-        merchantRequestDto.setKey(key);
-
+    @Order(1)
+    void test_rest_create_merchant() {
         var resultResponse = webClient.post()
                 .uri("/api/v1/merchants/create")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -74,10 +88,14 @@ class PaymentProviderApplicationTests {
         assert resultResponse != null;
         assertEquals(resultResponse.getLogin(), login);
         assertEquals(resultResponse.getKey(), key);
+        firstMerchantId = resultResponse.getId();
+        assertTrue(firstMerchantId > 0);
+
     }
 
     @Test
-    void createAccount() {
+    @Order(2)
+    void test_rest_create_account() {
         long depositAmount = 10000;
         long limitAmount = 1000;
         AccountRequestDto accountRequestDto = new AccountRequestDto();
@@ -97,5 +115,23 @@ class PaymentProviderApplicationTests {
         assert resultResponse != null;
         assertEquals(resultResponse.getDepositAmount(), depositAmount);
         assertEquals(resultResponse.getLimitAmount(), limitAmount);
+        firstAccountId = resultResponse.getId();
+        assertTrue(firstAccountId > 0);
+    }
+
+    @Test
+    void test_account_service_get_by_id_success(){
+        MerchantRequestDto newMerchantRequestDto = new MerchantRequestDto();
+        newMerchantRequestDto.setLogin("");
+        when(accountService.get(authToken)).thenReturn(Mono.just(merchantRequestDto));
+
+
+        Mono<AccountEntity> account = accountService.create()
+        StepVerifier
+                .create(merchantRequestDto)
+                .consumeNextWith(newUser -> {
+                    assertEquals(newUser.getEmail(), TEST_EMAIL);
+                })
+                .verifyComplete();
     }
 }

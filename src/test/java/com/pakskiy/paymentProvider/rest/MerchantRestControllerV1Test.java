@@ -1,12 +1,9 @@
 package com.pakskiy.paymentProvider.rest;
 
-import com.pakskiy.paymentProvider.dto.merchant.MerchantRequestDto;
-import com.pakskiy.paymentProvider.dto.merchant.MerchantResponseDto;
 import com.pakskiy.paymentProvider.repository.MerchantRepository;
-import com.pakskiy.paymentProvider.service.MerchantService;
+import com.pakskiy.paymentProvider.service.impl.MerchantServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +12,6 @@ import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.MessageSource;
 import org.springframework.test.web.reactive.server.WebTestClient;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 @WebFluxTest(controllers = MerchantRestControllerV1.class)
@@ -31,10 +26,10 @@ class MerchantRestControllerV1Test {
     MessageSource messageSource;
 
     @MockBean
-    private final MerchantService merchantService;
+    private final MerchantServiceImpl merchantServiceImpl;
 
-    MerchantRestControllerV1Test(MerchantService merchantService) {
-        this.merchantService = merchantService;
+    MerchantRestControllerV1Test(MerchantServiceImpl merchantServiceImpl) {
+        this.merchantServiceImpl = merchantServiceImpl;
     }
 //    @InjectMocks
 //    MerchantRestControllerV1 merchantRestControllerV1;

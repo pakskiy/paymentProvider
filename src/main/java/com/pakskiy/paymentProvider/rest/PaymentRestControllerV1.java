@@ -1,6 +1,5 @@
 package com.pakskiy.paymentProvider.rest;
 
-import com.pakskiy.paymentProvider.dto.merchant.MerchantResponseDto;
 import com.pakskiy.paymentProvider.dto.payment.PaymentRequestDto;
 import com.pakskiy.paymentProvider.dto.payment.PaymentResponseDto;
 import com.pakskiy.paymentProvider.entity.TransactionEntity;
@@ -41,7 +40,7 @@ public class PaymentRestControllerV1 {
 
     @GetMapping(value = "/list")
     public Flux<TransactionEntity> list(@RequestParam("start_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime startDate,
-                                       @RequestParam("end_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime endDate) {
+                                        @RequestParam("end_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime endDate) {
         return paymentService.list(startDate, endDate);
     }
 

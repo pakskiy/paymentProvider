@@ -1,4 +1,4 @@
-package com.pakskiy.paymentProvider.service;
+package com.pakskiy.paymentProvider.service.impl;
 
 import com.pakskiy.paymentProvider.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import java.time.Duration;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class NotificationService {
+public class NotificationServiceImpl {
     private final NotificationRepository notificationRepository;
     private final RetryTemplate retryTemplate;
     private final WebClient webClient;

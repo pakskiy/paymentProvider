@@ -1,6 +1,7 @@
 package com.pakskiy.paymentProvider.repository;
 
 import com.pakskiy.paymentProvider.dto.TransactionStatus;
+import com.pakskiy.paymentProvider.dto.TransactionType;
 import com.pakskiy.paymentProvider.entity.TransactionEntity;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
@@ -8,11 +9,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Repository
-public interface PaymentRepository extends ReactiveCrudRepository<TransactionEntity, Long> {
-    Flux<TransactionEntity> findAllByOrderByCreatedAt();
+public interface TransactionRepository extends ReactiveCrudRepository<TransactionEntity, Long> {
+    Flux<TransactionEntity> findAllByTypeEqualsAndCreatedAtBetweenOrderByCreatedAtDesc(TransactionType type, LocalDateTime startDate, LocalDateTime endDate);
+
+    Mono<TransactionEntity> findByIdAndTypeEquals(long transactionId, TransactionType type);
+
     Flux<TransactionEntity> findAllByStatusEqualsOrderByCreatedAtAsc(TransactionStatus status);
-    Flux<TransactionEntity> findAllByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime startDate, LocalDateTime endDate);
 }

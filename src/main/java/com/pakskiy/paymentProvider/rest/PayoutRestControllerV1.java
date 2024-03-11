@@ -29,17 +29,4 @@ public class PayoutRestControllerV1 {
         return payoutService.create(payoutRequestDto, token)
                 .map(res -> (res.getStatus() != FAILED ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
-
-//    @PostMapping(value = "/payout")
-//    public Mono<PayoutResponseDto> create(@RequestBody PayoutRequestDto payoutTransactionDto) {
-//        return payoutService
-//                .create(payoutTransactionDto)
-//                .map(result -> {
-//                    if (result.getErrorCode() != null) {
-//                        return result;
-//                    } else {
-//                        return result;
-//                    }
-//                });
-//    }
 }

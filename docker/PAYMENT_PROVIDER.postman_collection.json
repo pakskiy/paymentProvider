@@ -72,7 +72,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{url}}/api/v1/merchants/get/1",
+					"raw": "{{url}}/api/v1/merchants/list",
 					"host": [
 						"{{url}}"
 					],
@@ -80,8 +80,7 @@
 						"api",
 						"v1",
 						"merchants",
-						"get",
-						"1"
+						"list"
 					]
 				}
 			},
@@ -122,7 +121,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"payment_method\": \"CARD\",\r\n    \"amount\": \"25000\",\r\n    \"currency\": \"USD\",\r\n    \"provider_transaction_id\": \"5465456\",\r\n    \"createdAt\": \"{{currentDate}}\",\r\n    \"updatedAt\": \"{{currentDate}}\",\r\n    \"card_data\": {\r\n        \"card_number\": \"4102778822334893\",\r\n        \"exp_date\": \"11/23\",\r\n        \"cvv\": \"566\"\r\n    },\r\n    \"language\": \"en\",\r\n    \"notification_url\": \"https://leantech.ai/webhook/transaction\",\r\n    \"customer\": {\r\n        \"first_name\": \"John\",\r\n        \"last_name\": \"Doe\",\r\n        \"country\": \"BR\"\r\n    }\r\n}",
+					"raw": "{\r\n    \"payment_method\": \"CARD\",\r\n    \"amount\": \"25000\",\r\n    \"currency\": \"USD\",\r\n    \"provider_transaction_id\": \"5465456\",\r\n    \"created_at\": \"{{currentDate}}\",\r\n    \"updated_at\": \"{{currentDate}}\",\r\n    \"card_data\": {\r\n        \"card_number\": \"4102778822334893\",\r\n        \"exp_date\": \"11/23\",\r\n        \"cvv\": \"566\"\r\n    },\r\n    \"language\": \"en\",\r\n    \"notification_url\": \"https://leantech.ai/webhook/transaction\",\r\n    \"customer\": {\r\n        \"first_name\": \"John\",\r\n        \"last_name\": \"Doe\",\r\n        \"country\": \"BR\" \r\n    }\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -201,7 +200,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"payment_method\": \"CARD\",\r\n    \"amount\": \"25000\",\r\n    \"currency\": \"USD\",\r\n    \"provider_transaction_id\": \"5465456\",\r\n    \"createdAt\": \"{{currentDate}}\",\r\n    \"updatedAt\": \"{{currentDate}}\",\r\n    \"card_data\": {\r\n        \"card_number\": \"4102778822334893\"\r\n    },\r\n    \"language\": \"en\",\r\n    \"notification_url\": \"https://leantech.ai/webhook/transaction\",\r\n    \"customer\": {\r\n        \"first_name\": \"John\",\r\n        \"last_name\": \"Doe\",\r\n        \"country\": \"BR\"\r\n    }\r\n}",
+					"raw": "{\r\n    \"payment_method\": \"CARD\",\r\n    \"amount\": \"25000\",\r\n    \"currency\": \"USD\",\r\n    \"provider_transaction_id\": \"5465456\",\r\n    \"created_at\": \"{{currentDate}}\",\r\n    \"updated_at\": \"{{currentDate}}\",\r\n    \"card_data\": {\r\n        \"card_number\": \"4102778822334893\"\r\n    },\r\n    \"language\": \"en\",\r\n    \"notification_url\": \"https://leantech.ai/webhook/transaction\",\r\n    \"customer\": {\r\n        \"first_name\": \"John\",\r\n        \"last_name\": \"Doe\",\r\n        \"country\": \"BR\"\r\n    }\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -308,7 +307,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{url}}/api/v1/payments/transaction/1/details",
+					"raw": "{{url}}/api/v1/payments/list?start_date=01.01.2024 00:00:00&end_date=01.03.2024 00:00:00",
 					"host": [
 						"{{url}}"
 					],
@@ -316,9 +315,17 @@
 						"api",
 						"v1",
 						"payments",
-						"transaction",
-						"1",
-						"details"
+						"list"
+					],
+					"query": [
+						{
+							"key": "start_date",
+							"value": "01.01.2024 00:00:00"
+						},
+						{
+							"key": "end_date",
+							"value": "01.03.2024 00:00:00"
+						}
 					]
 				}
 			},
