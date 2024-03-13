@@ -118,11 +118,12 @@ public class TransactionServiceImpl implements TransactionService {
                     transactionList.stream().parallel().forEach(t -> checkTransaction(t).subscribe());
                     return Mono.empty();
                 });
+        //switch on empty and doonerror
     }
 
     private Mono<Void> checkTransaction(TransactionEntity el) {
         return accountServiceImpl.getById(el.getAccountId())
-                .publishOn(Schedulers.boundedElastic())
+                .publishOn(Schedulers.boundedElastic())//to scheduler from springboot
                 .map(entity -> {
                     var currentDeposit = entity.getDepositAmount();
                     var currentLimit = entity.getLimitAmount();
@@ -145,6 +146,7 @@ public class TransactionServiceImpl implements TransactionService {
                     el.setStatus(FAILED);
                     return Mono.empty();
                 })
+                //todo @TransactionalOperator for rollback
                 .flatMap(one -> transactionRepository.save(el))
                 .then();
     }

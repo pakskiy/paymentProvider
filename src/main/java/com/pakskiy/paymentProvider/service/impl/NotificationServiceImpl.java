@@ -22,6 +22,7 @@ public class NotificationServiceImpl {
     private final RetryTemplate retryTemplate;
     private final WebClient webClient;
 
+    //webclient not restclient
     public Mono<Void> send() {
         return retryTemplate.execute(retryContext -> webClient.method(HttpMethod.POST)
                 .uri("your_post_endpoint")
