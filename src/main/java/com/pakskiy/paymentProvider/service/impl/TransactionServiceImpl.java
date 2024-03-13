@@ -10,14 +10,15 @@ import com.pakskiy.paymentProvider.repository.CountryRepository;
 import com.pakskiy.paymentProvider.repository.CurrencyRepository;
 import com.pakskiy.paymentProvider.repository.LanguageRepository;
 import com.pakskiy.paymentProvider.repository.TransactionRepository;
+import com.pakskiy.paymentProvider.service.NotificationService;
 import com.pakskiy.paymentProvider.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -39,6 +40,8 @@ public class TransactionServiceImpl implements TransactionService {
     private final CountryRepository countryRepository;
     private final LanguageRepository languageRepository;
     private final ObjectMapper objectMapper;
+    private final TransactionalOperator transactionalOperator;
+    private final NotificationService notificationService;
 
     @Override
     public Mono<Long> process(TransactionRequestDto request, String token, TransactionType type) {
@@ -122,32 +125,33 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private Mono<Void> checkTransaction(TransactionEntity el) {
-        return accountServiceImpl.getById(el.getAccountId())
-                .publishOn(Schedulers.boundedElastic())//to scheduler from springboot
-                .map(entity -> {
-                    var currentDeposit = entity.getDepositAmount();
-                    var currentLimit = entity.getLimitAmount();
-                    var amount = el.getAmount();
-                    log.info("entity {}", entity);
-                    if (el.getType() == IN) {
-                        entity.setDepositAmount(currentDeposit + amount);
-                    } else {
-                        if ((currentDeposit + currentLimit) >= amount) {
-                            entity.setDepositAmount(currentDeposit - amount);
-                        } else {
-                            return Mono.error(new RuntimeException("Not enough deposit amount")).subscribe();
-                        }
-                    }
-                    el.setStatus(COMPLETED);
-                    return accountServiceImpl.update(entity).subscribe();
-                })
+        transactionalOperator.transactional(Mono.defer(() ->
+                        accountServiceImpl.getById(el.getAccountId())
+                                .map(entity -> {
+                                            var currentDeposit = entity.getDepositAmount();
+                                            var currentLimit = entity.getLimitAmount();
+                                            var amount = el.getAmount();
+                                            log.info("entity {}", entity);
+                                            if (el.getType() == IN) {
+                                                entity.setDepositAmount(currentDeposit + amount);
+                                            } else {
+                                                if ((currentDeposit + currentLimit) >= amount) {
+                                                    entity.setDepositAmount(currentDeposit - amount);
+                                                } else {
+                                                    return Mono.error(new RuntimeException("Not enough deposit amount")).subscribe();
+                                                }
+                                            }
+                                            el.setStatus(COMPLETED);
+                                            return accountServiceImpl.update(entity).then(notificationService.send()).subscribe();
+                                        }
+                                ))
                 .onErrorResume(ex -> {
                     log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
                     el.setStatus(FAILED);
                     return Mono.empty();
                 })
                 //todo @TransactionalOperator for rollback
-                .flatMap(one -> transactionRepository.save(el))
-                .then();
+                .flatMap(one -> transactionRepository.save(el))).subscribe();
+        return Mono.empty();
     }
 }

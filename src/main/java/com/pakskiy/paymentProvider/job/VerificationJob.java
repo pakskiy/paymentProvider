@@ -2,32 +2,27 @@ package com.pakskiy.paymentProvider.job;
 
 import com.pakskiy.paymentProvider.service.impl.ClearingServiceImpl;
 import com.pakskiy.paymentProvider.service.impl.TransactionServiceImpl;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class VerificationJob {
-    @Value("${app.checkTransactionStepInSeconds}")
-    private long TRANSACTION_STEP;
-
     @Value("${app.clearingStepInSeconds}")
     private long CLEARING_STEP;
 
     private final ClearingServiceImpl clearingServiceImpl;
     private final TransactionServiceImpl transactionService;
 
-    @PostConstruct
+    @Scheduled(fixedRateString = "${app.checkTransactionStepInSeconds}", initialDelay = 10, timeUnit = TimeUnit.SECONDS)
     public void init() {
         //clearing();
         checking();
@@ -43,23 +38,14 @@ public class VerificationJob {
 //                );
 //    }
     private void checking() {
-        Flux.interval(Duration.ofSeconds(3), Duration.ofSeconds(TRANSACTION_STEP))
-                .publishOn(Schedulers.newSingle("trx-checking-thread"))
-                .flatMap(i -> {
-                    LocalDateTime now = LocalDateTime.now();
-                    return transactionService.check().then(Mono.just(now))
-                            .doOnError(ex ->
-                                    log.error("ERROR IN TICK", ex)).
-                            onErrorReturn(now);
-                }).doOnError(ex -> {
-                    log.error("TIMER SHUTDOWN BECAUSE ERROR IN timerSource", ex);
-                })
+        transactionService.check().then(Mono.just(LocalDateTime.now()))
+                .doOnError(ex -> log.error("ERROR IN TICK", ex))
                 .doOnSubscribe(s -> {
                     log.info("TIMER STARTED");
                 })
-                .repeat()
                 .subscribe(
                         it -> log.info("TIMER TICK AT {} END AT {}", it, LocalDateTime.now()),
                         error -> log.error("TIMER IS SHUTDOWN BECAUSE SEVERE ERROR ", error));
+
     }
 }

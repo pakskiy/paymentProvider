@@ -1,6 +1,7 @@
 package com.pakskiy.paymentProvider.service.impl;
 
 import com.pakskiy.paymentProvider.repository.NotificationRepository;
+import com.pakskiy.paymentProvider.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
@@ -17,7 +18,7 @@ import java.time.Duration;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class NotificationServiceImpl {
+public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final RetryTemplate retryTemplate;
     private final WebClient webClient;
@@ -33,5 +34,18 @@ public class NotificationServiceImpl {
                 .bodyToMono(String.class)
                 .timeout(Duration.ofSeconds(10)) // Timeout after 10 seconds
                 .doOnError(error -> System.out.println("Error occurred: " + error.getMessage())).then());
+    }
+
+    private Mono<String> post(){
+        WebClient webClient = WebClient.create("https://api.example.com");
+
+        String requestBody = "{\"name\": \"John\", \"age\": 30}";
+
+        return webClient.post()
+                .uri("/endpoint")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(requestBody))
+                .retrieve()
+                .bodyToMono(String.class);
     }
 }
