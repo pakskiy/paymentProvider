@@ -13,6 +13,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PaymentResponseDto extends TransactionResponseDto {
-    @JsonProperty("transaction_id")
+    @JsonProperty("transactionId")
     private Long transactionId;
 }

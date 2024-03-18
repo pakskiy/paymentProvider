@@ -134,15 +134,16 @@ public class TransactionServiceImpl implements TransactionService {
                                             log.info("entity {}", entity);
                                             if (el.getType() == IN) {
                                                 entity.setDepositAmount(currentDeposit + amount);
+                                                el.setStatus(COMPLETED);
                                             } else {
                                                 if ((currentDeposit + currentLimit) >= amount) {
                                                     entity.setDepositAmount(currentDeposit - amount);
+                                                    el.setStatus(COMPLETED);
                                                 } else {
                                                     return Mono.error(new RuntimeException("Not enough deposit amount")).subscribe();
                                                 }
                                             }
-                                            el.setStatus(COMPLETED);
-                                            return accountServiceImpl.update(entity).then(notificationService.send()).subscribe();
+                                            return accountServiceImpl.update(entity).then(notificationService.send(el)).subscribe();
                                         }
                                 ))
                 .onErrorResume(ex -> {
