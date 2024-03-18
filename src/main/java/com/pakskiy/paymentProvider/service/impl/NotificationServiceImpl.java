@@ -22,42 +22,6 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final WebClient webClient;
 
-    //webclient not restclient
-//    public Mono<Void> send(TransactionEntity transaction) {
-//        return post(transaction)
-//                .map(el -> notificationRepository.save(NotificationEntity.builder()
-//                        .transactionId(transaction.getId()).response(el)
-//                        .url(transaction.getNotificationUrl()).build())).then();
-//
-////
-////
-////        return webClient.post()
-////                .contentType(MediaType.APPLICATION_JSON)
-////                .body(BodyInserters.fromValue(requestBody))
-////                .retrieve()
-////                .bodyToMono(String.class)
-////                .retry(3)
-////                .timeout(Duration.ofSeconds(10)) // Timeout after 10 seconds
-////                .then()
-////
-////                .doOnError(error -> log.error("Error occurred: " + error.getMessage(), error))
-////                .doOnSuccess(el -> notificationRepository.save(NotificationEntity.builder()
-////                                .url(transaction.getNotificationUrl()).
-////                        .build()))
-////                .then();
-////
-////
-////        return retryTemplate.execute(retryContext -> webClient.method(HttpMethod.POST)
-////                .uri("your_post_endpoint")
-////                .contentType(MediaType.APPLICATION_JSON)
-////                .body(BodyInserters.fromValue("your_request_body"))
-////                .retrieve()
-////                .onStatus(httpStatusCode -> HttpStatus.ACCEPTED.is5xxServerError(), response -> Mono.error(new RuntimeException("Server error")))
-////                .bodyToMono(String.class)
-////                .timeout(Duration.ofSeconds(10)) // Timeout after 10 seconds
-////                .doOnError(error -> System.out.println("Error occurred: " + error.getMessage())).then());
-//    }
-
     public Mono<Void> send(TransactionEntity transaction) {
         String requestBody = "{\"transactionId\": \"" + transaction.getId() + "\", \"status\"" + transaction.getStatus() + "}";
 
@@ -66,12 +30,6 @@ public class NotificationServiceImpl implements NotificationService {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(requestBody))
                 .retrieve()
-//                .onStatus(httpStatusCode -> !HttpStatus.ACCEPTED.is2xxSuccessful(), response -> {
-//                    if(transaction.getId()!= null) {
-//                        saveNotification(transaction.getId(), transaction.getNotificationUrl(), response.toString());
-//                    }
-//                    return Mono.error(new RuntimeException("HTTP request error" + response.toString()));
-//                })
                 .bodyToMono(String.class)
                 .retryWhen(Retry.backoff(3, Duration.ofSeconds(5))
                         .maxBackoff(Duration.ofSeconds(10))
