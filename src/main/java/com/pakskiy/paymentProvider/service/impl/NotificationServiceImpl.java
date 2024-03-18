@@ -4,15 +4,16 @@ import com.pakskiy.paymentProvider.entity.NotificationEntity;
 import com.pakskiy.paymentProvider.entity.TransactionEntity;
 import com.pakskiy.paymentProvider.repository.NotificationRepository;
 import com.pakskiy.paymentProvider.service.NotificationService;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
+
+import java.time.Duration;
 
 @Slf4j
 @Service
@@ -72,8 +73,15 @@ public class NotificationServiceImpl implements NotificationService {
 //                    return Mono.error(new RuntimeException("HTTP request error" + response.toString()));
 //                })
                 .bodyToMono(String.class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(5))
+                        .maxBackoff(Duration.ofSeconds(10))
+                        .doBeforeRetry(signal -> {
+                            log.error("Retrying after error: " + signal);
+                            saveNotification(transaction.getId(), transaction.getNotificationUrl(), "Retry " + signal.totalRetries() + " Error: " + signal.failure().getMessage());
+                        })
+                )
                 .doOnSuccess(success -> saveNotification(transaction.getId(), transaction.getNotificationUrl(), "200OK"))
-                .doOnError(error -> saveNotification(transaction.getId(), transaction.getNotificationUrl(), error.getMessage())).then();
+                .doOnError(error -> log.error("Fail request")).then();
     }
 
     private void saveNotification(Long transactionId, String url, String response) {

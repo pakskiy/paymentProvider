@@ -81,8 +81,9 @@ CREATE TABLE notifications (
     transaction_id bigint NOT NULL,
     url varchar(255) NOT NULL,
     response varchar(255) NOT NULL,
+    created_at timestamp NOT NULL default NOW(),
     PRIMARY KEY (id),
     CONSTRAINT fk_transactions_notifications FOREIGN KEY (transaction_id) REFERENCES transactions (id)
 );
 
-CREATE UNIQUE INDEX uq_notifications_tr_id ON notifications (transaction_id);
+-- CREATE UNIQUE INDEX uq_notifications_tr_id ON notifications (transaction_id);
