@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 //https://gist.github.com/kad9/b595910e1a659f91d199b910f699a2d2
 
 @Component
-@WebFilter(urlPatterns = {"/api/v1/merchants/create"})
 public class RequestFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)

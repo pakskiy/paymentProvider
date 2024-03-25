@@ -17,41 +17,41 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 @WebFluxTest(controllers = MerchantRestControllerV1.class)
 @AutoConfigureWebTestClient
 class MerchantRestControllerV1Test {
-    @Autowired
-    private WebTestClient webTestClient;
-    @Mock
-    MerchantRepository merchantRepository;
-
-    @Mock
-    MessageSource messageSource;
-
-    @MockBean
-    private final MerchantServiceImpl merchantServiceImpl;
-
-    MerchantRestControllerV1Test(MerchantServiceImpl merchantServiceImpl) {
-        this.merchantServiceImpl = merchantServiceImpl;
-    }
-//    @InjectMocks
-//    MerchantRestControllerV1 merchantRestControllerV1;
-
-    @Test
-    void handleCreateMerchant_ReturnValidResponseEntity(){
-//        MerchantRequestDto merchantRequestDto = new MerchantRequestDto();
-//        merchantRequestDto.setLogin("test1");
-//        merchantRequestDto.setKey("test1key");
+//    @Autowired
+//    private WebTestClient webTestClient;
+//    @Mock
+//    MerchantRepository merchantRepository;
 //
-//        //when
-//        this.merchantRestControllerV1.create(merchantRequestDto)
-//                .map(el -> {
-//                    if(el.getStatusCode().is2xxSuccessful()) {
+//    @Mock
+//    MessageSource messageSource;
 //
-//                    }
-//                    return el;
-//                });
-        webTestClient.get()
-                .uri("/create")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody(String.class).isEqualTo("Hello, World!");
-    }
+//    @MockBean
+//    private final MerchantServiceImpl merchantServiceImpl;
+//
+//    MerchantRestControllerV1Test(MerchantServiceImpl merchantServiceImpl) {
+//        this.merchantServiceImpl = merchantServiceImpl;
+//    }
+////    @InjectMocks
+////    MerchantRestControllerV1 merchantRestControllerV1;
+//
+//    @Test
+//    void handleCreateMerchant_ReturnValidResponseEntity(){
+////        MerchantRequestDto merchantRequestDto = new MerchantRequestDto();
+////        merchantRequestDto.setLogin("test1");
+////        merchantRequestDto.setKey("test1key");
+////
+////        //when
+////        this.merchantRestControllerV1.create(merchantRequestDto)
+////                .map(el -> {
+////                    if(el.getStatusCode().is2xxSuccessful()) {
+////
+////                    }
+////                    return el;
+////                });
+//        webTestClient.get()
+//                .uri("/create")
+//                .exchange()
+//                .expectStatus().isOk()
+//                .expectBody(String.class).isEqualTo("Hello, World!");
+//    }
 }
