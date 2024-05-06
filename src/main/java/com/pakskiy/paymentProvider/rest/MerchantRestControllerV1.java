@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/merchants")
 @RequiredArgsConstructor
@@ -31,7 +33,7 @@ public class MerchantRestControllerV1 {
     }
 
     @PostMapping(value = "/update")
-    public Mono<ResponseEntity<MerchantResponseDto>> update(@RequestBody MerchantRequestDto merchantRequestDto) {
+    public Mono<ResponseEntity<MerchantResponseDto>> update(@RequestHeader("foo") String encoding, @RequestBody MerchantRequestDto merchantRequestDto) {
         return merchantService.update(merchantRequestDto)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
