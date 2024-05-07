@@ -59,40 +59,40 @@ public class AppConfig {
         });
     }
 
-    @Bean
-    public WebFilter addCustomRequestHeaderFilter() {
-        return (exchange, chain) -> {
-
-
-//            // Modify request headers here
-//            ServerWebExchange modifiedExchange = exchange.mutate()
-//                    .request(builder -> builder.header("foo", "header value"))
-//                    .build();
+//    @Bean
+//    public WebFilter addCustomRequestHeaderFilter() {
+//        return (exchange, chain) -> {
+////            // Modify request headers here
+////            ServerWebExchange modifiedExchange = exchange.mutate()
+////                    .request(builder -> builder.header("foo", "header value"))
+////                    .build();
+////
+////            // Proceed with the chain
+////            return chain.filter(modifiedExchange);
+//            ServerHttpRequest request = exchange.getRequest();
+//            HttpHeaders headers = request.getHeaders();
+//            Flux<DataBuffer> body = request.getBody();
 //
-//            // Proceed with the chain
-//            return chain.filter(modifiedExchange);
-            ServerHttpRequest request = exchange.getRequest();
-            HttpHeaders headers = request.getHeaders();
-            Flux<DataBuffer> body = request.getBody();
+//            // Transform Flux<DataBuffer> to a Mono<String> representing the request body
+//            Mono<String> bodyMono = body
+//                    .map(dataBuffer -> dataBuffer.toString(StandardCharsets.UTF_8))
+//                    .reduce(String::concat);
+//            log.info("WebFilter here");
+//            // Process request body
+////            return bodyMono.flatMap(requestBody -> {
+////                // Find element or perform any operation on the request body
+////                if (requestBody.contains("searchElement")) {
+////                    // Log or perform operation
+////                    log.info("Element found in request body");
+////                }
+////
+////                // Proceed with the filter chain
+////                return chain.filter(exchange);
+////            });
+//            return chain.filter(exchange);
+//        };
 
-            // Transform Flux<DataBuffer> to a Mono<String> representing the request body
-            Mono<String> bodyMono = body
-                    .map(dataBuffer -> dataBuffer.toString(StandardCharsets.UTF_8))
-                    .reduce(String::concat);
-
-            // Process request body
-            return bodyMono.flatMap(requestBody -> {
-                // Find element or perform any operation on the request body
-                if (requestBody.contains("searchElement")) {
-                    // Log or perform operation
-                    System.out.println("Element found in request body");
-                }
-
-                // Proceed with the filter chain
-                return chain.filter(exchange);
-            });
-        };
-    }
+//    }
 
 //    @Bean
 //    FilterRegistrationBean<HeaderOverrideFilter> headerOerrideFilterRegistration() {
