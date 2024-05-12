@@ -99,8 +99,9 @@ public class MerchantServiceImpl implements MerchantService {
 
     public Mono<MerchantEntity> findByToken(String token) {
         String pair = new String(Base64.decodeBase64(token.substring(6)));
-        String login = pair.split(":")[0];
-        String key = pair.split(":")[1];
+        var credentials = pair.split(":");
+        String login = credentials[0];
+        String key = credentials[1];
         return merchantRepository.findByLoginAndKey(login, key);
     }
 

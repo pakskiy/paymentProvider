@@ -33,7 +33,7 @@ public class MerchantRestControllerV1 {
     }
 
     @PostMapping(value = "/update")
-    public Mono<ResponseEntity<MerchantResponseDto>> update(@RequestHeader("foo") String encoding, @RequestBody MerchantRequestDto merchantRequestDto) {
+    public Mono<ResponseEntity<MerchantResponseDto>> update(@RequestBody MerchantRequestDto merchantRequestDto) {
         return merchantService.update(merchantRequestDto)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
@@ -45,7 +45,7 @@ public class MerchantRestControllerV1 {
     }
 
     @GetMapping(value = "/list")
-    public Flux<MerchantEntity> list(@RequestHeader("Authorization") @NotNull @NotEmpty String token) {
+    public Flux<MerchantEntity> list() {
         return merchantService.list();
     }
 }
