@@ -23,7 +23,7 @@ public class CustomWebFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-//      serverWebExchange.getResponse().getHeaders().add("web-filter", "web-filter-test");
+        exchange.getResponse().getHeaders().add("web-filter", "web-filter-test");
         exchange.getRequest().getHeaders().add("web-filter", "web-filter-test");
 
 //        var headers = exchange.getRequest().getHeaders();
