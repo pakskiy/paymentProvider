@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -24,14 +25,15 @@ public class AccountRestControllerV1 {
     private final AccountService accountService;
 
     @PostMapping(value = "/create")
-    public Mono<ResponseEntity<AccountResponseDto>> create(@RequestHeader("Authorization") @NotNull @NotEmpty String token,
-                                                           @RequestBody AccountRequestDto request) {
+    public Mono<ResponseEntity<AccountResponseDto>> create(@RequestHeader("Authorization") @NotNull @NotEmpty String token
+            , @NotNull @NotEmpty ServerWebExchange exchange, @RequestBody AccountRequestDto request) {
         return accountService.create(request, token)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
 
     @GetMapping(value = "/get")
-    public Mono<ResponseEntity<AccountResponseDto>> get(@RequestHeader("Authorization") @NotNull @NotEmpty String token) {
+    public Mono<ResponseEntity<AccountResponseDto>> get(@RequestHeader("Authorization") @NotNull @NotEmpty String token
+            , @NotNull @NotEmpty ServerWebExchange exchange) {
         return accountService.get(token)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
