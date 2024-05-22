@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -39,15 +40,13 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @SneakyThrows
-    public Mono<AccountResponseDto> create(AccountRequestDto request, String token) {
-        return merchantService.findByToken(token)
-                .switchIfEmpty(Mono.error(new RuntimeException("Merchant not founded")))
-                .flatMap(merchant -> accountRepository.save(AccountEntity.builder().merchantId(merchant.getId())
+    public Mono<AccountResponseDto> create(AccountRequestDto request, String merchantId) {
+        return accountRepository.save(AccountEntity.builder().merchantId(Long.valueOf(merchantId))
                         .depositAmount(request.getDepositAmount())
                         .limitAmount(request.getLimitAmount()).isOverdraft(0)
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
-                        .build()))
+                        .build())
                 .map(el -> AccountResponseDto.builder().id(el.getId()).depositAmount(el.getDepositAmount())
                         .limitAmount(el.getLimitAmount()).build())
                 .onErrorResume(ex -> {
@@ -68,10 +67,8 @@ public class AccountServiceImpl implements AccountService {
 
     }
 
-    public Mono<AccountResponseDto> get(String token) {
-        return merchantService.findByToken(token)
-                .switchIfEmpty(Mono.error(new RuntimeException("Merchant not founded")))
-                .flatMap(merchant -> accountRepository.findByMerchantId(merchant.getId()))
+    public Mono<AccountResponseDto> get(ServerWebExchange exchange) {
+        return accountRepository.findByMerchantId(exchange.getAttribute("merchantId"))
                 .map(account -> AccountResponseDto.builder().id(account.getId()).merchantId(account.getMerchantId())
                         .depositAmount(account.getDepositAmount()).limitAmount(account.getLimitAmount())
                         .isOverdraft(account.getIsOverdraft())

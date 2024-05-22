@@ -9,10 +9,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.IN_PROGRESS;
@@ -25,8 +27,9 @@ public class PaymentServiceImpl implements PaymentService {
     private final TransactionService transactionService;
 
     @Transactional
-    public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
-        return transactionService.process(request, token, IN).map(res -> {
+//    public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
+    public Mono<PaymentResponseDto> create(PaymentRequestDto request, ServerWebExchange exchange) {
+        return transactionService.process(request, exchange, IN).map(res -> {
             if (res != null && res > 0) {
                 return PaymentResponseDto.builder().transactionId(res).status(IN_PROGRESS).message("OK").build();
             }
@@ -38,11 +41,18 @@ public class PaymentServiceImpl implements PaymentService {
         });
     }
 
-    public Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate) {
-        return transactionService.list(startDate, endDate, IN);
+    public Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate, ServerWebExchange exchange) {
+        if (startDate == null)
+            startDate = LocalDateTime.now().with(LocalTime.MIN);
+
+        if (endDate == null)
+            endDate = LocalDateTime.now().with(LocalTime.MAX);
+
+        return transactionService.list(startDate, endDate, exchange, IN);
     }
 
-    public Mono<TransactionEntity> get(Long transactionId) {
+    public Mono<TransactionEntity> get(Long transactionId, ServerWebExchange exchange) {
+        Long merchantId = exchange.getAttribute("merchantId");
         return transactionService.get(transactionId, IN);
     }
 }

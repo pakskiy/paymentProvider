@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,8 +27,8 @@ public class PayoutServiceImpl implements PayoutService {
     private final TransactionService transactionService;
 
     @Transactional
-    public Mono<PayoutResponseDto> create(PayoutRequestDto request, String token) {
-        return transactionService.process(request, token, OUT).map(res -> {
+    public Mono<PayoutResponseDto> create(PayoutRequestDto request, ServerWebExchange exchange) {
+        return transactionService.process(request, exchange, OUT).map(res -> {
             if (res != null && res > 0) {
                 return PayoutResponseDto.builder().transactionId(res).status(IN_PROGRESS).message("OK").build();
             }

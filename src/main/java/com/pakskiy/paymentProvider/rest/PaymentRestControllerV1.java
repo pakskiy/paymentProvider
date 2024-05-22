@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -31,18 +31,18 @@ import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
 public class PaymentRestControllerV1 {
     private final PaymentService paymentService;
 
-    //add filter with validation and add return merchantId
     @PostMapping(value = "/payment")
-    public Mono<ResponseEntity<PaymentResponseDto>> create(@RequestHeader("Authorization") @NotNull @NotEmpty String token,
+    public Mono<ResponseEntity<PaymentResponseDto>> create(@NotNull @NotEmpty ServerWebExchange exchange,
                                                            @RequestBody @Valid PaymentRequestDto paymentRequestDto) {
-        return paymentService.create(paymentRequestDto, token)
+        return paymentService.create(paymentRequestDto, exchange)
                 .map(res -> (res.getStatus() != FAILED ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
 
     @GetMapping(value = "/list")
-    public Flux<TransactionEntity> list(@RequestParam("start_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime startDate,
+    public Flux<TransactionEntity> list(@NotNull @NotEmpty ServerWebExchange exchange,
+                                        @RequestParam("start_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime startDate,
                                         @RequestParam("end_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime endDate) {
-        return paymentService.list(startDate, endDate);
+        return paymentService.list(startDate, endDate, exchange);
     }
 
     @GetMapping(value = "/transaction/{transactionId}/details")

@@ -10,9 +10,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
@@ -24,9 +24,9 @@ public class PayoutRestControllerV1 {
     private final PayoutService payoutService;
 
     @PostMapping(value = "/payout")
-    public Mono<ResponseEntity<PayoutResponseDto>> create(@RequestHeader("Authorization") @NotNull @NotEmpty String token,
+    public Mono<ResponseEntity<PayoutResponseDto>> create(@NotNull @NotEmpty ServerWebExchange exchange,
                                                           @RequestBody @Valid PayoutRequestDto payoutRequestDto) {
-        return payoutService.create(payoutRequestDto, token)
+        return payoutService.create(payoutRequestDto, exchange)
                 .map(res -> (res.getStatus() != FAILED ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
 }

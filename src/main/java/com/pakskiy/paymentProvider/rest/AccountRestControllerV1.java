@@ -32,14 +32,13 @@ public class AccountRestControllerV1 {
     }
 
     @GetMapping(value = "/get")
-    public Mono<ResponseEntity<AccountResponseDto>> get(@RequestHeader("Authorization") @NotNull @NotEmpty String token
-            , @NotNull @NotEmpty ServerWebExchange exchange) {
-        return accountService.get(token)
+    public Mono<ResponseEntity<AccountResponseDto>> get(@NotNull @NotEmpty ServerWebExchange exchange) {
+        return accountService.get(exchange)
                 .map(res -> (res.getErrorCode() == null ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res)));
     }
 
     @GetMapping(value = "/list")
-    public Flux<AccountEntity> list(@RequestHeader("Authorization") @NotNull @NotEmpty String token) {
+    public Flux<AccountEntity> list() {
         return accountService.list();
     }
 }

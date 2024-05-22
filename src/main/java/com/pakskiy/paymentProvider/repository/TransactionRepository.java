@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 
 @Repository
 public interface TransactionRepository extends ReactiveCrudRepository<TransactionEntity, Long> {
-    Flux<TransactionEntity> findAllByTypeEqualsAndCreatedAtBetweenOrderByCreatedAtDesc(TransactionType type, LocalDateTime startDate, LocalDateTime endDate);
+    Flux<TransactionEntity> findAllByAccountIdAndTypeEqualsAndCreatedAtBetweenOrderByCreatedAtDesc(long accountId, TransactionType type, LocalDateTime startDate, LocalDateTime endDate);
 
-    Mono<TransactionEntity> findByIdAndTypeEquals(long transactionId, TransactionType type);
+    Mono<TransactionEntity> findByIdAndTypeEqualsAndAccountId(long transactionId, TransactionType type, long accountId);
 
     Flux<TransactionEntity> findAllByStatusEqualsOrderByCreatedAtAsc(TransactionStatus status);
 }
