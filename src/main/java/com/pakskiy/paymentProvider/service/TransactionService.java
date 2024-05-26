@@ -10,11 +10,11 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 
 public interface TransactionService {
-    Mono<Long> process(TransactionRequestDto request, ServerWebExchange exchange, TransactionType type);
+    Mono<Long> process(TransactionRequestDto request, long accountId, TransactionType type);
 
-    Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate, ServerWebExchange exchange, TransactionType type);
+    Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate, long accountId, TransactionType type);
 
-    Mono<TransactionEntity> get(Long transactionId, TransactionType type);
+    Mono<TransactionEntity> get(Long transactionId, TransactionType type, long accountId);
 
     Mono<Void> validate(TransactionRequestDto request);
 }

@@ -22,7 +22,7 @@ import java.time.format.DateTimeFormatter;
 @RequiredArgsConstructor
 public class MerchantServiceImpl implements MerchantService {
     private final MerchantRepository merchantRepository;
-    final static DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
+    static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
     public Mono<MerchantResponseDto> create(MerchantRequestDto request) {
         return merchantRepository.save(MerchantEntity.builder()

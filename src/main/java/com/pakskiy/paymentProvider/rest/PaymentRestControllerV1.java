@@ -40,13 +40,13 @@ public class PaymentRestControllerV1 {
 
     @GetMapping(value = "/list")
     public Flux<TransactionEntity> list(@NotNull @NotEmpty ServerWebExchange exchange,
-                                        @RequestParam("start_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime startDate,
-                                        @RequestParam("end_date") @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime endDate) {
+                                        @RequestParam(value = "start_date", required = false) @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime startDate,
+                                        @RequestParam(value = "end_date", required = false) @DateTimeFormat(pattern = "dd.MM.yyyy HH:mm:ss") LocalDateTime endDate) {
         return paymentService.list(startDate, endDate, exchange);
     }
 
     @GetMapping(value = "/transaction/{transactionId}/details")
-    public Mono<TransactionEntity> get(@PathVariable Long transactionId) {
-        return paymentService.get(transactionId);
+    public Mono<TransactionEntity> get(@NotNull @NotEmpty ServerWebExchange accountExchange, @PathVariable Long transactionId) {
+        return paymentService.get(transactionId, accountExchange);
     }
 }

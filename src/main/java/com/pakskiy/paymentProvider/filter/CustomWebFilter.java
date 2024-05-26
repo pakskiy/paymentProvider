@@ -1,5 +1,6 @@
 package com.pakskiy.paymentProvider.filter;
 
+import com.pakskiy.paymentProvider.service.AccountService;
 import com.pakskiy.paymentProvider.service.MerchantService;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 public class CustomWebFilter implements WebFilter {
 
     private final MerchantService merchantService;
+    private final AccountService accountService;
 
     @NonNull
     @Override
@@ -27,18 +29,34 @@ public class CustomWebFilter implements WebFilter {
 
         String authorizationHeader = headers.getFirst("Authorization");
 
-        if (!currentUrl.contains("/api/v1/accounts") && !currentUrl.contains("/api/v1/payments")) {
-            return chain.filter(exchange);
+        if (currentUrl.contains("/api/v1/accounts")) {
+            //Set to attribute merchantId
+            return merchantService.findByToken(authorizationHeader)
+                    .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
+                    .flatMap(merchant -> {
+                        exchange.getAttributes().put("merchantId", merchant.getId());
+                        return chain.filter(exchange);
+                    }).onErrorResume(ex -> {
+                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return exchange.getResponse().writeWith(
+                                Mono.just(exchange.getResponse().bufferFactory().wrap("Missing or empty credentials".getBytes()))
+                        );
+                    });
+        } else if (currentUrl.contains("/api/v1/payments") || currentUrl.contains("/api/v1/payouts")) {
+            //Set to attribute accountId
+            return merchantService.findByToken(authorizationHeader)
+                    .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
+                    .flatMap(merchant -> accountService.findByMerchantId(merchant.getId())
+                            .flatMap(account -> {
+                                exchange.getAttributes().put("accountId", account.getId());
+                                return chain.filter(exchange);
+                            }).onErrorResume(ex -> {
+                                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                                return exchange.getResponse().writeWith(
+                                        Mono.just(exchange.getResponse().bufferFactory().wrap("Missing or empty credentials".getBytes()))
+                                );
+                            }));
         }
-
-        return merchantService.findByToken(authorizationHeader)
-                .switchIfEmpty(Mono.error(new RuntimeException("Token not founded")))
-                .flatMap(merchant -> {
-                    exchange.getAttributes().put("merchantId", merchant.getId());
-                    return chain.filter(exchange);
-                }).onErrorResume(ex -> {
-                    exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
-                    return chain.filter(exchange);
-                });
+        return chain.filter(exchange);
     }
 }

@@ -27,21 +27,27 @@ public class AccountServiceImpl implements AccountService {
     private final MerchantService merchantService;
     private final static DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
-    public Mono<AccountEntity> getById(Long id) {
+    public Mono<AccountEntity> findById(Long id) {
         return accountRepository.findById(id)
                 .doOnError(error -> log.error("Error occurred while finding entity with ID: {}", id, error))
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Entity with ID {} not found", id);
                     return Mono.empty();
-                })).map(account -> {
-                    log.info("account {}", account);
-                    return account;
-                });
+                }));
+    }
+
+    public Mono<AccountEntity> findByMerchantId(Long id) {
+        return accountRepository.findByMerchantId(id)
+                .doOnError(error -> log.error("Error occurred while finding entity with ID: {}", id, error))
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("Account with merchant id {} not found", id);
+                    return Mono.empty();
+                }));
     }
 
     @SneakyThrows
-    public Mono<AccountResponseDto> create(AccountRequestDto request, String merchantId) {
-        return accountRepository.save(AccountEntity.builder().merchantId(Long.valueOf(merchantId))
+    public Mono<AccountResponseDto> create(AccountRequestDto request, ServerWebExchange exchange) {
+        return accountRepository.save(AccountEntity.builder().merchantId(exchange.getAttribute("merchantId"))
                         .depositAmount(request.getDepositAmount())
                         .limitAmount(request.getLimitAmount()).isOverdraft(0)
                         .createdAt(LocalDateTime.now())
@@ -68,7 +74,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     public Mono<AccountResponseDto> get(ServerWebExchange exchange) {
-        return accountRepository.findByMerchantId(exchange.getAttribute("merchantId"))
+        return findByMerchantId(exchange.getAttribute("merchantId"))
                 .map(account -> AccountResponseDto.builder().id(account.getId()).merchantId(account.getMerchantId())
                         .depositAmount(account.getDepositAmount()).limitAmount(account.getLimitAmount())
                         .isOverdraft(account.getIsOverdraft())
@@ -93,7 +99,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     public Flux<AccountEntity> list() {
-        return accountRepository.findAll()
+        return accountRepository.findAllByOrderById()
                 .collectList().flatMapMany(account -> {
                     if (account.isEmpty()) {
                         return Flux.empty();

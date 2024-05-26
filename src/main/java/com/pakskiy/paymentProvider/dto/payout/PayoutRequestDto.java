@@ -7,8 +7,6 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.jackson.Jacksonized;
 
 @Data
-@Builder
-@Jacksonized
 @EqualsAndHashCode(callSuper = true)
 public class PayoutRequestDto extends TransactionRequestDto {
 }

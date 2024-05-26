@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public interface PayoutService {
     Mono<PayoutResponseDto> create(PayoutRequestDto request, ServerWebExchange exchange);
 
-    Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate);
+    Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate, ServerWebExchange exchange);
 
-    Mono<TransactionEntity> get(Long transactionId);
+    Mono<TransactionEntity> get(Long transactionId, ServerWebExchange exchange);
 }

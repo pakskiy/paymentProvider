@@ -28,7 +28,7 @@ public class ClearingServiceImpl {
 //        return el.map(transactionEntity -> {
 //            log.info("Transaction data {}", transactionEntity);
 //
-//            Mono<AccountEntity> accountEntity = accountService.getById(transactionEntity.getAccountId())
+//            Mono<AccountEntity> accountEntity = accountService.findById(transactionEntity.getAccountId())
 //                    .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")));
 //
 //            Mono<Long> amount = accountEntity.map(res -> {

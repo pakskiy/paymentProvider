@@ -8,11 +8,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface AccountService {
-    Mono<AccountEntity> getById(Long id);
+    Mono<AccountEntity> findById(Long id);
 
-    Mono<AccountResponseDto> create(AccountRequestDto request, String token);
+    Mono<AccountEntity> findByMerchantId(Long id);
+
+    Mono<AccountResponseDto> create(AccountRequestDto request, ServerWebExchange exchange);
 
     Mono<AccountResponseDto> get(ServerWebExchange exchange);
+
     Mono<AccountEntity> update(AccountEntity account);
 
     Flux<AccountEntity> list();

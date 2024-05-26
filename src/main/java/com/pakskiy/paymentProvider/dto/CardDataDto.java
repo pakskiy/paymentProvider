@@ -19,12 +19,12 @@ public class CardDataDto {
     @NotEmpty
     @JsonProperty("card_number")
     private String cardNumber;
-    @NotNull
-    @NotEmpty
+//    @NotNull
+//    @NotEmpty
     @JsonProperty("exp_date")
     private String expDate;
-    @NotNull
-    @NotEmpty
+//    @NotNull
+//    @NotEmpty
     @JsonProperty("cvv")
     private String cvv;
 }

@@ -19,6 +19,8 @@ import java.time.LocalTime;
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.FAILED;
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.IN_PROGRESS;
 import static com.pakskiy.paymentProvider.dto.TransactionType.IN;
+import static com.pakskiy.paymentProvider.util.DateUtil.getEndOtTheDay;
+import static com.pakskiy.paymentProvider.util.DateUtil.getStartOtTheDay;
 
 @Slf4j
 @Service
@@ -27,9 +29,13 @@ public class PaymentServiceImpl implements PaymentService {
     private final TransactionService transactionService;
 
     @Transactional
-//    public Mono<PaymentResponseDto> create(PaymentRequestDto request, String token) {
     public Mono<PaymentResponseDto> create(PaymentRequestDto request, ServerWebExchange exchange) {
-        return transactionService.process(request, exchange, IN).map(res -> {
+        Long accountId = exchange.getAttribute("accountId");
+        if (accountId == null) {
+            return Mono.empty();
+        }
+
+        return transactionService.process(request, accountId, IN).map(res -> {
             if (res != null && res > 0) {
                 return PaymentResponseDto.builder().transactionId(res).status(IN_PROGRESS).message("OK").build();
             }
@@ -42,17 +48,19 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     public Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate, ServerWebExchange exchange) {
-        if (startDate == null)
-            startDate = LocalDateTime.now().with(LocalTime.MIN);
+        Long accountId = exchange.getAttribute("accountId");
+        if (accountId == null) {
+            return Flux.empty();
+        }
 
-        if (endDate == null)
-            endDate = LocalDateTime.now().with(LocalTime.MAX);
-
-        return transactionService.list(startDate, endDate, exchange, IN);
+        return transactionService.list(getStartOtTheDay(startDate), getEndOtTheDay(endDate), accountId, IN);
     }
 
     public Mono<TransactionEntity> get(Long transactionId, ServerWebExchange exchange) {
-        Long merchantId = exchange.getAttribute("merchantId");
-        return transactionService.get(transactionId, IN);
+        Long accountId = exchange.getAttribute("accountId");
+        if (accountId == null) {
+            return Mono.empty();
+        }
+        return transactionService.get(transactionId, IN, accountId);
     }
 }

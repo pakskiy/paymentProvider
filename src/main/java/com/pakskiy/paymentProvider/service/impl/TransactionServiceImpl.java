@@ -2,7 +2,6 @@ package com.pakskiy.paymentProvider.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pakskiy.paymentProvider.dto.TransactionRequestDto;
-import com.pakskiy.paymentProvider.dto.TransactionStatus;
 import com.pakskiy.paymentProvider.dto.TransactionType;
 import com.pakskiy.paymentProvider.entity.TransactionEntity;
 import com.pakskiy.paymentProvider.repository.CountryRepository;
@@ -16,12 +15,13 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
-import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.Optional;
 
 import static com.pakskiy.paymentProvider.dto.TransactionStatus.COMPLETED;
@@ -35,7 +35,6 @@ import static com.pakskiy.paymentProvider.dto.TransactionType.IN;
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountServiceImpl accountServiceImpl;
-    private final MerchantServiceImpl merchantServiceImpl;
     private final CurrencyRepository currencyRepository;
     private final CountryRepository countryRepository;
     private final LanguageRepository languageRepository;
@@ -44,10 +43,10 @@ public class TransactionServiceImpl implements TransactionService {
     private final NotificationService notificationService;
 
     @Override
-    public Mono<Long> process(TransactionRequestDto request, ServerWebExchange exchange, TransactionType type) {
-        return validate(request).then(Mono.defer(() -> accountServiceImpl.getById(exchange.getAttribute("merchantId"))
+    public Mono<Long> process(TransactionRequestDto request, long accountId, TransactionType type) {
+        return validate(request).then(Mono.defer(() -> accountServiceImpl.findById(accountId)
                         .switchIfEmpty(Mono.error(new RuntimeException("Account not founded")))
-                        .flatMap(account -> transactionRepository.save(getTransactionEntity(request, account.getMerchantId(), type, IN_PROGRESS)))
+                        .flatMap(account -> transactionRepository.save(getTransactionEntity(request, account.getMerchantId(), type)))
                         .map(transactionEntity -> Optional.ofNullable(transactionEntity.getId()).orElse(0L))))
                 .onErrorResume(ex -> {
                     log.error("ERR_CREATE_COMMON {}", ex.getMessage(), ex);
@@ -56,15 +55,13 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate, ServerWebExchange exchange, TransactionType type) {
-        return accountServiceImpl.getById(exchange.getAttribute("merchantId"))
-                .switchIfEmpty(Mono.error(new RuntimeException("Account not founded"))).flux()
-                .flatMap(account -> transactionRepository.findAllByAccountIdAndTypeEqualsAndCreatedAtBetweenOrderByCreatedAtDesc(account.getId(), type, startDate, endDate));
+    public Flux<TransactionEntity> list(LocalDateTime startDate, LocalDateTime endDate, long accountId, TransactionType type) {
+        return transactionRepository.findAllByAccountIdAndTypeEqualsAndCreatedAtBetweenOrderByCreatedAtDesc(accountId, type, startDate, endDate);
     }
 
     @Override
-    public Mono<TransactionEntity> get(Long transactionId, TransactionType type, ServerWebExchange exchange) {
-        return transactionRepository.findByIdAndTypeEqualsAndAccountId(transactionId, type, exchange.getAttribute("merchantId"));
+    public Mono<TransactionEntity> get(Long transactionId, TransactionType type, long accountId) {
+        return transactionRepository.findByIdAndTypeEqualsAndAccountId(transactionId, type, accountId);
     }
 
     public Mono<Void> validate(TransactionRequestDto request) {
@@ -84,17 +81,29 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @SneakyThrows
-    private TransactionEntity getTransactionEntity(TransactionRequestDto request, Long accountId, TransactionType type, TransactionStatus status) {
+    private TransactionEntity getTransactionEntity(TransactionRequestDto request, Long accountId, TransactionType type) {
         String customerData = objectMapper.writeValueAsString(request.getCustomer());
         String cardData = objectMapper.writeValueAsString(request.getCardData());
 
-        return TransactionEntity.builder().accountId(accountId).providerTransactionId(request.getProviderTransactionId()).method(request.getPaymentMethod()).amount(request.getAmount()).currencyId(request.getCurrency().toUpperCase()).createdAt(LocalDateTime.ofInstant(request.getCreatedAt().toInstant(), ZoneId.systemDefault())).updatedAt(LocalDateTime.ofInstant(request.getUpdatedAt().toInstant(), ZoneId.systemDefault())).cardData(cardData)//here need parse card data
-                .languageId(request.getLanguage().toUpperCase()).notificationUrl(request.getNotificationUrl()).type(type).customerData(customerData)//here need parse card data
-                .status(status).build();
+        return TransactionEntity.builder().accountId(accountId)
+                .providerTransactionId(request.getProviderTransactionId())
+                .method(request.getPaymentMethod())
+                .amount(request.getAmount())
+                .currencyId(request.getCurrency().toUpperCase())
+                .createdAt(LocalDateTime.ofInstant(request.getCreatedAt().toInstant(), ZoneId.systemDefault()))
+                .updatedAt(LocalDateTime.ofInstant(request.getUpdatedAt().toInstant(), ZoneId.systemDefault()))
+                .cardData(cardData)//here need parse card data
+                .languageId(request.getLanguage().toUpperCase())
+                .notificationUrl(request.getNotificationUrl())
+                .type(type)
+                .customerData(customerData)//here need parse card data
+                .status(IN_PROGRESS).build();
     }
 
     public Mono<Void> check() {
-        return transactionRepository.findAllByStatusEqualsOrderByCreatedAtAsc(IN_PROGRESS).collectSortedList().flatMap(transactionList -> {
+        return transactionRepository.findAllByStatusEqualsOrderByCreatedAtAsc(IN_PROGRESS)
+                .collectSortedList()
+                .flatMap(transactionList -> {
             log.info("transactionList {}", transactionList);
             transactionList.stream().parallel().forEach(t -> checkTransaction(t).subscribe());
             return Mono.empty();
@@ -103,18 +112,20 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private Mono<Void> checkTransaction(TransactionEntity el) {
-        transactionalOperator.transactional(Mono.defer(() -> accountServiceImpl.getById(el.getAccountId()).map(entity -> {
+        transactionalOperator.transactional(Mono.defer(() -> accountServiceImpl.findById(el.getAccountId()).map(entity -> {
                     var currentDeposit = entity.getDepositAmount();
                     var currentLimit = entity.getLimitAmount();
                     var amount = el.getAmount();
                     log.info("entity {}", entity);
+
+                    el.setStatus(COMPLETED);
+                    el.setUpdatedAt(LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()));
+
                     if (el.getType() == IN) {
                         entity.setDepositAmount(currentDeposit + amount);
-                        el.setStatus(COMPLETED);
                     } else {
                         if ((currentDeposit + currentLimit) >= amount) {
                             entity.setDepositAmount(currentDeposit - amount);
-                            el.setStatus(COMPLETED);
                         } else {
                             return Mono.error(new RuntimeException("Not enough deposit amount")).subscribe();
                         }
@@ -125,7 +136,6 @@ public class TransactionServiceImpl implements TransactionService {
                     el.setStatus(FAILED);
                     return Mono.empty();
                 })
-                //todo @TransactionalOperator for rollback
                 .flatMap(one -> transactionRepository.save(el))).subscribe();
         return Mono.empty();
     }

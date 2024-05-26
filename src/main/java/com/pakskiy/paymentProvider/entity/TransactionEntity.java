@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @Table(name = "transactions")
-public final class TransactionEntity implements Persistable<Long> {
+public class TransactionEntity implements Persistable<Long>, Comparable<TransactionEntity> {
     @Id
     @Column(value = "id")
     private Long id;
@@ -53,12 +53,16 @@ public final class TransactionEntity implements Persistable<Long> {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", shape = JsonFormat.Shape.STRING)
     private LocalDateTime updatedAt;
-    //    @Column(value = "status") private String status;
     @Column(value = "status")
     private TransactionStatus status;
 
     @Override
     public boolean isNew() {
         return this.id == null;
+    }
+
+    @Override
+    public int compareTo(TransactionEntity other) {
+        return Long.compare(this.id, other.id);
     }
 }
