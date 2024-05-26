@@ -13,8 +13,8 @@ public class NotificationEntity {
     @Id
     @Column(value = "id")
     private Long id;
-    @Column(value = "transactionId")
-    private Long transaction_id;
+    @Column(value = "transaction_id")
+    private Long transactionId;
     @Column(value = "url")
     private String url;
     @Column(value = "response")

@@ -2,19 +2,17 @@ package com.pakskiy.paymentProvider.dto.payment;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
+import com.pakskiy.paymentProvider.dto.TransactionResponseDto;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+
 
 @Data
-@Builder
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PaymentResponseDto {
-    @JsonProperty("transaction_id")
-    private final Long transactionId;
-    @JsonProperty("status")
-    private final Statuses status;
-    @JsonProperty("message")
-    private String message;
-
-    public enum Statuses {IN_PROCESS, APPROVED, FAILED}
+public class PaymentResponseDto extends TransactionResponseDto {
+    @JsonProperty("transactionId")
+    private Long transactionId;
 }

@@ -1,14 +1,16 @@
 package com.pakskiy.paymentProvider.dto.account;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
-@Data
+@Getter
 @Builder
-public class AccountGetResponseDto {
+@NoArgsConstructor
+@AllArgsConstructor
+public class AccountResponseDto {
     @JsonProperty("id")
     private Long id;
     @JsonProperty("merchant_id")

@@ -1,5 +1,8 @@
 server:
   port: 8045
+app:
+  clearingStepInSeconds: 30
+  checkTransactionStepInSeconds: 60
 spring:
   main:
     web-application-type: reactive
@@ -20,7 +23,8 @@ logging:
   level:
     liquibase: INFO
     root: INFO
-    org:
-      springframework:
-        data:
-          r2dbc=DEBUG:
+    io:
+      r2dbc:
+        postgresql:
+          QUERY: DEBUG
+          PARAM: DEBUG

@@ -1,0 +1,486 @@
+{
+	"info": {
+		"_postman_id": "43c80aa2-dd66-4928-851b-5e5c44388a00",
+		"name": "PAYMENT_PROVIDER",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30197090"
+	},
+	"item": [
+		{
+			"name": "MERCHANT_CREATE",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"login\":\"user001\",\r\n    \"key\":\"5Vw6YNJ6RA8f8w5T6BLs001\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/api/v1/merchants/create",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"merchants",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MERCHANT_UPDATE",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\":1,\r\n    \"login\":\"user001\",\r\n    \"key\":\"5Vw6YNJ6RA8f8w5T6BLs001\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8045/api/v1/merchants/update",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8045",
+					"path": [
+						"api",
+						"v1",
+						"merchants",
+						"update"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MERCHANT_GET",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/merchants/get/1",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"merchants",
+						"get",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MERCHANT_LIST",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/merchants/list",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"merchants",
+						"list"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ACCOUNT_CREATE",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "5Vw6YNJ6RA8f8w5T6BLs001",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "user001",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"deposit_amount\":300000,\r\n    \"limit_amount\":10000\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/api/v1/accounts/create",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"accounts",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ACCOUNT_GET",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "5Vw6YNJ6RA8f8w5T6BLs001",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "user001",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/accounts/get",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"accounts",
+						"get"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ACCOUNT_LIST",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "5Vw6YNJ6RA8f8w5T6BLs001",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "user001",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/accounts/list",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"accounts",
+						"list"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PAYMENT",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const dateNow = new Date();\r",
+							"console.log(dateNow.toISOString());\r",
+							"pm.environment.set('currentDate', dateNow.toISOString());\r",
+							"pm.environment.set('randomTransactionId', _.random(1000000000,9999999999));\r",
+							"pm.environment.set('randomAmount', _.random(1000,9999));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "5Vw6YNJ6RA8f8w5T6BLs001",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "user001",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"payment_method\": \"CARD\",\r\n    \"amount\": \"{{randomAmount}}\",\r\n    \"currency\": \"USD\",\r\n    \"provider_transaction_id\": \"{{randomTransactionId}}\",\r\n    \"created_at\": \"{{currentDate}}\",\r\n    \"updated_at\": \"{{currentDate}}\",\r\n    \"card_data\": {\r\n        \"card_number\": \"4102778822334893\",\r\n        \"exp_date\": \"11/23\",\r\n        \"cvv\": \"566\"\r\n    },\r\n    \"language\": \"en\",\r\n    \"notification_url\": \"https://anonym.coin/webhook/transaction\",\r\n    \"customer\": {\r\n        \"first_name\": \"John\",\r\n        \"last_name\": \"Doe\",\r\n        \"country\": \"BR\" \r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/api/v1/payments/payment",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"payments",
+						"payment"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PAYMENT_LIST",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "5Vw6YNJ6RA8f8w5T6BLs001",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "user001",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/payments/list",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"payments",
+						"list"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PAYMENT_DETAILS_BY_TRX_ID",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "5Vw6YNJ6RA8f8w5T6BLs001",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "user001",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/payments/transaction/1/details",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"payments",
+						"transaction",
+						"1",
+						"details"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PAYOUT",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const dateNow = new Date();\r",
+							"console.log(dateNow.toISOString());\r",
+							"pm.environment.set('currentDate', dateNow.toISOString());\r",
+							"pm.environment.set('randomTransactionId', _.random(1000000000,9999999999));\r",
+							"pm.environment.set('randomAmount', _.random(1000,9999));\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "user001",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "5Vw6YNJ6RA8f8w5T6BLs001",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"payment_method\": \"CARD\",\r\n    \"amount\": \"{{randomAmount}}\",\r\n    \"currency\": \"USD\",\r\n    \"provider_transaction_id\": \"{{randomTransactionId}}\",\r\n    \"created_at\": \"{{currentDate}}\",\r\n    \"updated_at\": \"{{currentDate}}\",\r\n    \"card_data\": {\r\n        \"card_number\": \"4102778822334893\"\r\n    },\r\n    \"language\": \"en\",\r\n    \"notification_url\": \"https://anonym.coin/webhook/transaction\",\r\n    \"customer\": {\r\n        \"first_name\": \"John\",\r\n        \"last_name\": \"Doe\",\r\n        \"country\": \"BR\"\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/api/v1/payouts/payout",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"payouts",
+						"payout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PAYOUTS_LIST",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "5Vw6YNJ6RA8f8w5T6BLs001",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "user001",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/v1/payouts/list",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"payouts",
+						"list"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "url",
+			"value": "http://127.0.0.1:8045",
+			"type": "string"
+		},
+		{
+			"key": "currentDate",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

@@ -1,18 +1,14 @@
 package com.pakskiy.paymentProvider.dto.account;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-@Builder
-public class AccountCreateResponseDto {
-    @JsonProperty("id")
-    private Long id;
+@NoArgsConstructor
+public class AccountRequestDto {
     @JsonProperty("deposit_amount")
     private long depositAmount;
     @JsonProperty("limit_amount")
     private long limitAmount;
-    @JsonProperty("error_code")
-    private String errorCode;
 }
