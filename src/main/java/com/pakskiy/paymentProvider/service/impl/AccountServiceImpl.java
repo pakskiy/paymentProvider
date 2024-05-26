@@ -25,7 +25,7 @@ import java.time.format.DateTimeFormatter;
 public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
     private final MerchantService merchantService;
-    private final static DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
+    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
 
     public Mono<AccountEntity> findById(Long id) {
         return accountRepository.findById(id)

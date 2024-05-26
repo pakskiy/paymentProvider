@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +23,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.server.ServerWebExchange;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -32,6 +34,7 @@ import reactor.test.StepVerifier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -48,6 +51,7 @@ class PaymentProviderApplicationTests {
     private static final DockerImageName dockerImageName = DockerImageName.parse("postgres:12.15");
     @Autowired
     private WebTestClient webClient;
+    private static ServerWebExchange exchange;
 
     private final static MerchantRequestDto merchantRequestDto = new MerchantRequestDto();
 
@@ -73,6 +77,10 @@ class PaymentProviderApplicationTests {
         System.setProperty("spring.flyway.url", "jdbc:postgresql://localhost:" + postgresqlContainer.getFirstMappedPort() + "/paymentProvider");
         merchantRequestDto.setLogin(login);
         merchantRequestDto.setKey(key);
+        exchange = Mockito.mock(ServerWebExchange.class);
+        when(exchange.getAttribute("merchantId")).thenReturn(1L);
+        when(exchange.getAttribute("accountId")).thenReturn(1L);
+
     }
 
     @AfterAll
@@ -138,7 +146,7 @@ class PaymentProviderApplicationTests {
 //        account.setDepositAmount(10000);
 //        account.setLimitAmount(1000);
 
-        Mono<AccountResponseDto> createdAccount = accountService.get(authToken);
+        Mono<AccountResponseDto> createdAccount = accountService.get(exchange);
         StepVerifier
                 .create(createdAccount)
                 .consumeNextWith(newAccount -> {
@@ -160,7 +168,7 @@ class PaymentProviderApplicationTests {
 //        account.setDepositAmount(10000);
 //        account.setLimitAmount(1000);
 
-        Mono<AccountResponseDto> createdAccount = accountService.get(authToken);
+        Mono<AccountResponseDto> createdAccount = accountService.get(exchange);
         StepVerifier
                 .create(createdAccount)
                 .consumeNextWith(newAccount -> {

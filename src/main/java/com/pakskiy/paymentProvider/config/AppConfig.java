@@ -47,8 +47,8 @@ public class AppConfig {
     @Bean
     public ExchangeFilterFunction logRequest() {
         return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-            System.out.println("Request: " + clientRequest.method() + " " + clientRequest.url());
-            clientRequest.headers().forEach((name, values) -> values.forEach(value -> System.out.println(name + ": " + value)));
+            log.info("Request: {} {}", clientRequest.method(), clientRequest.url());
+            clientRequest.headers().forEach((name, values) -> values.forEach(value -> log.info("{}: {}", name, value)));
             return Mono.just(clientRequest);
         });
     }
